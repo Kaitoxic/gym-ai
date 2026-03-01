@@ -1,7 +1,8 @@
 ﻿import OpenAI from 'openai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 
-export type Provider = 'openrouter' | 'openai' | 'gemini';
+export type Provider = 'openrouter' | 'openai' | 'gemini' | 'groq';
 
 export interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -44,6 +45,17 @@ async function callGemini(model: string, messages: Message[]): Promise<string> {
   return result.response.text();
 }
 
+async function callGroq(model: string, messages: Message[]): Promise<string> {
+  const client = new Groq({ apiKey: process.env.GROQ_API_KEY! });
+  const res = await client.chat.completions.create({
+    model,
+    messages,
+    temperature: 0.7,
+    max_tokens: 4096,
+  });
+  return res.choices[0]?.message?.content ?? '';
+}
+
 export async function callAI(
   provider: Provider,
   model: string,
@@ -53,6 +65,7 @@ export async function callAI(
     case 'openrouter': return callOpenRouter(model, messages);
     case 'openai':     return callOpenAI(model, messages);
     case 'gemini':     return callGemini(model, messages);
+    case 'groq':       return callGroq(model, messages);
     default:
       throw new Error('Unsupported provider: ' + provider);
   }

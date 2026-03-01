@@ -9,6 +9,7 @@ import healthDbRouter from './routes/healthDb';
 import aiProxyRouter from './routes/ai/proxy';
 import exercisesRouter from './routes/exercises';
 import usersRouter from './routes/users';
+import programsRouter from './routes/programs';
 
 const app = express();
 
@@ -27,6 +28,7 @@ app.use('/health/db', healthDbRouter);
 app.use('/ai', aiProxyRouter);
 app.use('/exercises', exercisesRouter);
 app.use('/users', usersRouter);
+app.use('/programs', programsRouter);
 
 // Global error handler (must be last)
 app.use(errorHandler);

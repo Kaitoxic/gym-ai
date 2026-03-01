@@ -8,7 +8,7 @@ import { callAI } from '../../services/aiRouter';
 const router = Router();
 
 const ProxySchema = z.object({
-  provider: z.enum(['openrouter', 'openai', 'gemini']),
+  provider: z.enum(['openrouter', 'openai', 'gemini', 'groq']),
   model: z.string().min(1),
   messages: z
     .array(

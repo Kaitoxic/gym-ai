@@ -20,6 +20,7 @@
     "cors": "^2.8.5",
     "dotenv": "^16",
     "express": "^5",
+    "groq-sdk": "^0.37.0",
     "helmet": "^8",
     "jsonwebtoken": "^9.0.3",
     "openai": "^6.25.0",

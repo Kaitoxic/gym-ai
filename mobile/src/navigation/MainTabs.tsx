@@ -1,7 +1,7 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
-import HomeScreen from '../screens/HomeScreen';
+import HomeNavigator from './HomeNavigator';
 import ExercisesNavigator from './ExercisesNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
 
@@ -36,7 +36,7 @@ export default function MainTabs() {
         ),
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Home" component={HomeNavigator} />
       <Tab.Screen
         name="Exercises"
         component={ExercisesNavigator}
