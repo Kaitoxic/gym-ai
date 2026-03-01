@@ -36,7 +36,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signUp: async (email, password) => {
-    const redirectTo = Linking.createURL('/auth/confirm');
+    // Use Expo Linking to get the correct redirect URL for the current environment:
+    // - Expo Go: exp://192.168.1.16:8081/--/auth/confirm
+    // - Standalone build: gymcoachai://auth/confirm
+    const redirectTo = Linking.createURL('auth/confirm');
     const { error } = await supabase.auth.signUp({
       email,
       password,

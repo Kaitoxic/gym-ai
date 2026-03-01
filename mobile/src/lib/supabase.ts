@@ -88,19 +88,38 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // Handle deep link auth callbacks (email confirmation, magic links)
-// When user taps the link in their email, the app opens with the token in the URL
+// Supabase redirects back to the app with access_token in the URL hash
+function parseTokensFromUrl(url: string): { access_token?: string; refresh_token?: string } {
+  try {
+    // Tokens land in the hash fragment: #access_token=...&refresh_token=...
+    const hash = url.split('#')[1] ?? '';
+    const params: Record<string, string> = {};
+    hash.split('&').forEach((part) => {
+      const [k, v] = part.split('=');
+      if (k) params[decodeURIComponent(k)] = decodeURIComponent(v ?? '');
+    });
+    return { access_token: params.access_token, refresh_token: params.refresh_token };
+  } catch {
+    return {};
+  }
+}
+
+async function handleAuthDeepLink(url: string) {
+  if (!url) return;
+  const { access_token, refresh_token } = parseTokensFromUrl(url);
+  if (access_token && refresh_token) {
+    await supabase.auth.setSession({ access_token, refresh_token });
+  }
+}
+
 if (Platform.OS !== 'web') {
-  // Handle URL when app is already open
+  // App already open — URL arrives via event
   Linking.addEventListener('url', ({ url }) => {
-    if (url) {
-      supabase.auth.getSessionFromUrl(url).catch(() => {});
-    }
+    handleAuthDeepLink(url);
   });
 
-  // Handle URL when app is launched from background via deep link
+  // App cold-started from deep link
   Linking.getInitialURL().then((url) => {
-    if (url) {
-      supabase.auth.getSessionFromUrl(url).catch(() => {});
-    }
+    if (url) handleAuthDeepLink(url);
   });
 }
