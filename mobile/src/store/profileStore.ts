@@ -22,6 +22,7 @@ export interface UserProfile {
 
 interface ProfileState {
   profile: UserProfile | null;
+  initialized: boolean; // true after first fetchProfile completes (success or fail)
   loading: boolean;
   error: string | null;
   fetchProfile: () => Promise<void>;
@@ -31,6 +32,7 @@ interface ProfileState {
 
 export const useProfileStore = create<ProfileState>((set, get) => ({
   profile: null,
+  initialized: false,
   loading: false,
   error: null,
 
@@ -38,13 +40,14 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     set({ loading: true, error: null });
     try {
       const res = await apiClient.get<{ profile: UserProfile | null }>('/users/profile');
-      set({ profile: res.data.profile, loading: false });
+      set({ profile: res.data.profile, loading: false, initialized: true });
     } catch (err: any) {
-      set({ error: err.message ?? 'Failed to load profile', loading: false });
+      set({ error: err.message ?? 'Failed to load profile', loading: false, initialized: true });
     }
   },
 
   updateProfile: async (updates) => {
+    // Note: does NOT touch `initialized` — avoids remounting NavigationContainer in App.tsx
     set({ loading: true, error: null });
     try {
       const res = await apiClient.post<{ profile: UserProfile }>('/users/profile', updates);
@@ -54,5 +57,5 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
     }
   },
 
-  reset: () => set({ profile: null, loading: false, error: null }),
+  reset: () => set({ profile: null, initialized: false, loading: false, error: null }),
 }));

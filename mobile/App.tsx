@@ -10,7 +10,7 @@ import MainTabs from './src/navigation/MainTabs';
 
 export default function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
-  const { profile, loading: profileLoading, fetchProfile } = useProfileStore();
+  const { profile, initialized: profileInitialized, fetchProfile } = useProfileStore();
 
   // Initialize auth on launch
   useEffect(() => {
@@ -26,7 +26,10 @@ export default function App() {
     }
   }, [user]);
 
-  const isLoading = authLoading || (!!user && profileLoading && profile === null);
+  // Only block rendering until auth AND initial profile fetch are done
+  // updateProfile's loading state is intentionally excluded here —
+  // we must never unmount NavigationContainer mid-flow (would reset stack to Step 1)
+  const isLoading = authLoading || (!!user && !profileInitialized);
 
   if (isLoading) {
     return (
