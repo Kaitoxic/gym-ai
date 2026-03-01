@@ -206,6 +206,7 @@ export default function NutritionScreen() {
           ref={scrollRef}
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
+          style={{ flex: 1 }}
         >
           {/* Header row */}
           <View style={styles.headerRow}>
@@ -284,7 +285,6 @@ export default function NutritionScreen() {
             </View>
           )}
 
-          <View style={{ height: 80 }} />
         </ScrollView>
 
         {/* Input bar */}
@@ -386,10 +386,6 @@ const styles = StyleSheet.create({
   bubbleTextAi: { color: '#ccc' },
 
   inputBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     flexDirection: 'row',
     alignItems: 'flex-end',
     gap: 10,
