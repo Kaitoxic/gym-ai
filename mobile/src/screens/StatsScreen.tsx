@@ -59,7 +59,7 @@ const barStyles = StyleSheet.create({
 
 // ─── Radar Chart ─────────────────────────────────────────────────────────────
 
-const RADAR_LABELS = ['Force', 'Endurance', 'Santé', 'Sommeil'];
+const RADAR_LABELS = ['Force', 'Endurance', 'Santé', 'Nutrition', 'Sommeil'];
 const N = RADAR_LABELS.length;
 const RADAR_R = 120;
 const CENTER = RADAR_R + 36;
@@ -187,8 +187,8 @@ export default function StatsScreen() {
     const recentCount = history.filter((l) => new Date(l.completed_at).getTime() >= cutoff).length;
     const sante = Math.min((recentCount / 20) * 100, 100);
 
-    // Sommeil: placeholder (0 until sleep chapter added)
-    return [Math.round(force), Math.round(endurance), Math.round(sante), 0];
+    // Nutrition + Sommeil: placeholder (0 until those chapters are added)
+    return [Math.round(force), Math.round(endurance), Math.round(sante), 0, 0];
   }, [history]);
 
   const recent = history.slice(0, 5);
@@ -241,7 +241,7 @@ export default function StatsScreen() {
           <Text style={styles.sectionTitle}>Aperçu global</Text>
           <View style={styles.radarWrap}>
             <RadarChart data={radarData} />
-            <Text style={styles.radarHint}>Sommeil disponible bientôt</Text>
+            <Text style={styles.radarHint}>Nutrition et Sommeil disponibles bientôt</Text>
           </View>
         </View>
 

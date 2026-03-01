@@ -5,6 +5,7 @@ import HomeNavigator from './HomeNavigator';
 import ExercisesNavigator from './ExercisesNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
 import StatsScreen from '../screens/StatsScreen';
+import NutritionScreen from '../screens/NutritionScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -13,6 +14,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     HomeTab: '🏠',
     ExercisesTab: '💪',
     StatsTab: '📊',
+    NutritionTab: '🥗',
     ProfileTab: '👤',
   };
   return (
@@ -42,10 +44,11 @@ export default function MainTabs() {
       <Tab.Screen
         name="ExercisesTab"
         component={ExercisesNavigator}
-        options={{ title: 'Exercises', unmountOnBlur: false }}
+        options={{ title: 'Exercices', unmountOnBlur: false }}
       />
       <Tab.Screen name="StatsTab" component={StatsScreen} options={{ title: 'Stats' }} />
-      <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'Profile' }} />
+      <Tab.Screen name="NutritionTab" component={NutritionScreen} options={{ title: 'Nutrition' }} />
+      <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'Profil' }} />
     </Tab.Navigator>
   );
 }
@@ -59,10 +62,10 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   tabLabel: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: '600',
   },
   iconWrap: { alignItems: 'center', justifyContent: 'center' },
-  iconText: { fontSize: 20, opacity: 0.5 },
+  iconText: { fontSize: 18, opacity: 0.5 },
   iconFocused: { opacity: 1 },
 });
