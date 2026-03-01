@@ -1,6 +1,27 @@
-﻿node_modules/
+﻿# Dependencies
+node_modules/
+api/node_modules/
+mobile/node_modules/
+
+# Build outputs
 dist/
+api/dist/
+mobile/.expo/
+mobile/build/
+
+# Env files
 .env
-.env.local
-*.js.map
+api/.env
+mobile/.env
+
+# OS
 .DS_Store
+
+# Expo
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
