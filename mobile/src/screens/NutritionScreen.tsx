@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProfileStore } from '../store/profileStore';
+import { useAISettingsStore } from '../store/aiSettingsStore';
 import { apiClient } from '../lib/apiClient';
 
 // ─── TDEE + macro computation ─────────────────────────────────────────────────
@@ -107,6 +108,7 @@ const macroStyles = StyleSheet.create({
 
 export default function NutritionScreen() {
   const { profile } = useProfileStore();
+  const { coaching_style, detail_level } = useAISettingsStore();
   const targets = useMemo(() => (profile ? computeTargets(profile) : null), [profile]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -178,7 +180,11 @@ export default function NutritionScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const res = await apiClient.post<{ answer: string }>('/nutrition/ask', { question: q });
+      const res = await apiClient.post<{ answer: string }>('/nutrition/ask', {
+        question: q,
+        coaching_style,
+        detail_level,
+      });
       const aiMsg: ChatMessage = { role: 'ai', text: res.data.answer };
       setMessages((prev) => [...prev, aiMsg]);
     } catch {

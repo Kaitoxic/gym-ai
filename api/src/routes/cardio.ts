@@ -48,10 +48,24 @@ router.delete('/history', requireAuth, async (req: Request, res: Response) => {
 // ─── POST /cardio/ask ────────────────────────────────────────────────────────
 router.post('/ask', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { question } = req.body;
+    const { question, coaching_style, detail_level } = req.body;
     if (!question?.trim()) {
       return res.status(400).json({ error: 'question is required' });
     }
+
+    // Build coaching style modifier
+    const styleMap: Record<string, string> = {
+      strict: "Adopte le ton d'un coach strict et exigeant, sans fioritures. Va droit au but, comme un coach militaire.",
+      motivating: "Adopte le ton d'un coach bienveillant et motivant. Encourage l'utilisateur tout en restant factuel.",
+      scientific: "Adopte un ton scientifique et analytique. Base tes conseils sur des mécanismes physiologiques et des données.",
+    };
+    const detailMap: Record<string, string> = {
+      short: "Tes réponses sont courtes et concises (3-5 phrases maximum).",
+      detailed: "Tes réponses sont détaillées et complètes (2-3 paragraphes), avec des exemples pratiques.",
+    };
+    const styleStr = styleMap[coaching_style ?? 'motivating'] ?? styleMap.motivating;
+    const detailStr = detailMap[detail_level ?? 'short'] ?? detailMap.short;
+    const styleModifier = `${styleStr} ${detailStr}`;
 
     // Fetch user profile
     const { data: profile } = await supabase
@@ -79,7 +93,9 @@ router.post('/ask', requireAuth, async (req: Request, res: Response) => {
         content: m.content,
       }));
 
-    const systemPrompt = `Tu es un coach sportif expert en cardio et conditionnement physique. Tu conseilles sur les méthodes LISS, HIIT et MIIT selon le profil et les objectifs. Tes réponses sont concises (3-5 phrases max), pratiques et en français.
+    const systemPrompt = `Tu es un coach sportif expert en cardio et conditionnement physique. Tu conseilles sur les méthodes LISS, HIIT et MIIT selon le profil et les objectifs. Tes réponses sont en français.
+
+${styleModifier}
 
 ${CARDIO_KNOWLEDGE}
 

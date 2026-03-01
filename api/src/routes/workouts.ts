@@ -117,10 +117,24 @@ router.get('/streak', requireAuth, async (req: Request, res: Response) => {
 // AI suggestions for next session based on completed workout
 router.post('/adapt', requireAuth, async (req: Request, res: Response) => {
   try {
-    const { day_name, sets_done } = req.body;
+    const { day_name, sets_done, coaching_style, detail_level } = req.body;
     if (!day_name || !Array.isArray(sets_done)) {
       return res.status(400).json({ error: 'day_name and sets_done are required' });
     }
+
+    // Build coaching style modifier
+    const styleMap: Record<string, string> = {
+      strict: "Adopte le ton d'un coach strict et exigeant, sans fioritures. Va droit au but, comme un coach militaire.",
+      motivating: "Adopte le ton d'un coach bienveillant et motivant. Encourage l'utilisateur tout en restant factuel.",
+      scientific: "Adopte un ton scientifique et analytique. Base tes conseils sur des mécanismes physiologiques et des données.",
+    };
+    const detailMap: Record<string, string> = {
+      short: "Tes rationales sont courtes et concises (1-2 phrases maximum).",
+      detailed: "Tes rationales sont détaillées (2-3 phrases), avec une explication physiologique.",
+    };
+    const styleStr = styleMap[coaching_style ?? 'motivating'] ?? styleMap.motivating;
+    const detailStr = detailMap[detail_level ?? 'short'] ?? detailMap.short;
+    const styleModifier = `${styleStr} ${detailStr}`;
 
     // Summarize by exercise
     const exMap = new Map<string, { name: string; slug: string; done: any[]; total: number }>();
@@ -144,7 +158,7 @@ router.post('/adapt', requireAuth, async (req: Request, res: Response) => {
       return { exercise_name: ex.name, exercise_slug: ex.slug, sets_completed: ex.done.length, sets_total: ex.total, avg_weight_kg: avgWeight, avg_reps: avgReps };
     });
 
-    const prompt = `Tu es un coach sportif expert en powerbuilding (méthode Hersovyac/LouisPowerBuild).
+    const prompt = `Tu es un coach sportif expert en powerbuilding (méthode Hersovyac/LouisPowerBuild). ${styleModifier}
 L'utilisateur vient de terminer une séance "${day_name}".
 
 Exercices réalisés :

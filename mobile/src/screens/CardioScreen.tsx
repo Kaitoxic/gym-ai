@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProfileStore } from '../store/profileStore';
+import { useAISettingsStore } from '../store/aiSettingsStore';
 import { apiClient } from '../lib/apiClient';
 
 // ─── Cardio recommendations ───────────────────────────────────────────────────
@@ -124,6 +125,7 @@ const infoStyles = StyleSheet.create({
 
 export default function CardioScreen() {
   const { profile } = useProfileStore();
+  const { coaching_style, detail_level } = useAISettingsStore();
   const rec = useMemo(() => computeCardioRec(profile ?? {}), [profile]);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -202,7 +204,11 @@ export default function CardioScreen() {
     setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const res = await apiClient.post<{ answer: string }>('/cardio/ask', { question: q });
+      const res = await apiClient.post<{ answer: string }>('/cardio/ask', {
+        question: q,
+        coaching_style,
+        detail_level,
+      });
       const aiMsg: ChatMessage = { role: 'ai', text: res.data.answer };
       setMessages((prev) => [...prev, aiMsg]);
     } catch {

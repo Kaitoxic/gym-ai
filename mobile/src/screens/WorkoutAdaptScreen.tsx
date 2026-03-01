@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeNavigator';
 import { useWorkoutStore } from '../store/workoutStore';
+import { useAISettingsStore } from '../store/aiSettingsStore';
 import { apiClient } from '../lib/apiClient';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'WorkoutAdapt'>;
@@ -38,6 +39,7 @@ const ACTION_CONFIG: Record<string, { label: string; color: string; icon: string
 export default function WorkoutAdaptScreen({ navigation, route }: Props) {
   const { logId } = route.params;
   const { history } = useWorkoutStore();
+  const { coaching_style, detail_level } = useAISettingsStore();
   const log = history.find((h) => h.id === logId) ?? history[0];
 
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -53,6 +55,8 @@ export default function WorkoutAdaptScreen({ navigation, route }: Props) {
       .post<{ suggestions: Suggestion[] }>('/workouts/adapt', {
         day_name: log.day_name,
         sets_done: log.sets_done,
+        coaching_style,
+        detail_level,
       })
       .then((res) => {
         setSuggestions(res.data.suggestions ?? []);
