@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -75,6 +75,16 @@ export default function ProfileScreen({ navigation }: Props) {
     if (!loaded) load();
   }, [loaded, load]);
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity onPress={() => navigation.navigate('ProfileEdit')} style={{ paddingHorizontal: 4 }}>
+          <Text style={{ color: '#a78bfa', fontSize: 14, fontWeight: '700' }}>Modifier</Text>
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
@@ -100,16 +110,6 @@ export default function ProfileScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Mon Profil</Text>
-          <TouchableOpacity
-            style={styles.editBtn}
-            onPress={() => navigation.navigate('ProfileEdit')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.editBtnText}>Modifier</Text>
-          </TouchableOpacity>
-        </View>
 
         {profile ? (
           <View style={styles.card}>

@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   KeyboardAvoidingView,
+  Keyboard,
   Platform,
   ActivityIndicator,
 } from 'react-native';
@@ -60,12 +61,29 @@ export default function AIChatScreen() {
   const [asking, setAsking] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [conversationTitle, setConversationTitle] = useState(title);
+  const [kbOffset, setKbOffset] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
 
   // Set navigation header title
   useLayoutEffect(() => {
     navigation.setOptions({ title: conversationTitle });
   }, [navigation, conversationTitle]);
+
+  // Android keyboard listener — handles adjustNothing / adjustPan in Expo Go
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
+      setKbOffset(e.endCoordinates.height);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+    });
+    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
+      setKbOffset(0);
+    });
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
 
   // Load message history
   const loadHistory = useCallback(async () => {
@@ -113,7 +131,7 @@ export default function AIChatScreen() {
       const aiMsg: ChatMessage = { role: 'ai', text: res.data.answer };
       setMessages((prev) => [...prev, aiMsg]);
 
-      // Update title if it was default (server auto-renames after first message)
+      // Update title if it was default
       if (conversationTitle === 'Nouvelle conversation') {
         const newTitle = text.slice(0, 50) + (text.length > 50 ? '…' : '');
         setConversationTitle(newTitle);
@@ -129,100 +147,106 @@ export default function AIChatScreen() {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <KeyboardAvoidingView
+  const chatContent = (
+    <>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={[styles.scroll, Platform.OS === 'android' && { paddingBottom: kbOffset + 20 }]}
+        showsVerticalScrollIndicator={false}
         style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
       >
-        <ScrollView
-          ref={scrollRef}
-          contentContainerStyle={styles.scroll}
-          showsVerticalScrollIndicator={false}
-          style={{ flex: 1 }}
-        >
-          {/* Empty state */}
-          {!loadingHistory && messages.length === 0 && (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>
-                Pose n'importe quelle question sur ta musculation, ta nutrition ou ton cardio.
-              </Text>
-              <View style={styles.chipGrid}>
-                {SUGGESTIONS.map((s) => (
-                  <TouchableOpacity
-                    key={s.label}
-                    style={styles.chip}
-                    onPress={() => sendQuestion(s.text)}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={styles.chipLabel}>{s.label}</Text>
-                    <Text style={styles.chipText}>{s.text}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+        {/* Empty state */}
+        {!loadingHistory && messages.length === 0 && (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyText}>
+              Pose n'importe quelle question sur ta musculation, ta nutrition ou ton cardio.
+            </Text>
+            <View style={styles.chipGrid}>
+              {SUGGESTIONS.map((s) => (
+                <TouchableOpacity
+                  key={s.label}
+                  style={styles.chip}
+                  onPress={() => sendQuestion(s.text)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.chipLabel}>{s.label}</Text>
+                  <Text style={styles.chipText}>{s.text}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
-          )}
+          </View>
+        )}
 
-          {loadingHistory && (
-            <ActivityIndicator color="#a78bfa" style={{ marginVertical: 40 }} />
-          )}
+        {loadingHistory && (
+          <ActivityIndicator color="#a78bfa" style={{ marginVertical: 40 }} />
+        )}
 
-          {/* Messages */}
-          {messages.map((msg, i) => (
-            <View key={msg.id ?? i}>
-              {msg.created_at &&
-                (i === 0 || messages[i - 1]?.created_at !== msg.created_at) && (
-                  <Text style={styles.timestamp}>{formatTime(msg.created_at)}</Text>
-                )}
-              <View
+        {/* Messages */}
+        {messages.map((msg, i) => (
+          <View key={msg.id ?? i}>
+            {msg.created_at &&
+              (i === 0 || messages[i - 1]?.created_at !== msg.created_at) && (
+                <Text style={styles.timestamp}>{formatTime(msg.created_at)}</Text>
+              )}
+            <View
+              style={[
+                styles.bubble,
+                msg.role === 'user' ? styles.bubbleUser : styles.bubbleAi,
+              ]}
+            >
+              <Text
                 style={[
-                  styles.bubble,
-                  msg.role === 'user' ? styles.bubbleUser : styles.bubbleAi,
+                  styles.bubbleText,
+                  msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAi,
                 ]}
               >
-                <Text
-                  style={[
-                    styles.bubbleText,
-                    msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAi,
-                  ]}
-                >
-                  {msg.text}
-                </Text>
-              </View>
+                {msg.text}
+              </Text>
             </View>
-          ))}
+          </View>
+        ))}
 
-          {asking && (
-            <View style={styles.bubbleAi}>
-              <ActivityIndicator color="#a78bfa" size="small" />
-            </View>
-          )}
-        </ScrollView>
+        {asking && (
+          <View style={styles.bubbleAi}>
+            <ActivityIndicator color="#a78bfa" size="small" />
+          </View>
+        )}
+      </ScrollView>
 
-        {/* Input bar — outside ScrollView, not absolute */}
-        <View style={styles.inputBar}>
-          <TextInput
-            style={styles.input}
-            placeholder="Pose ta question..."
-            placeholderTextColor="#444"
-            value={input}
-            onChangeText={setInput}
-            multiline
-            returnKeyType="send"
-            onSubmitEditing={() => sendQuestion()}
-            color="#fff"
-          />
-          <TouchableOpacity
-            style={[styles.sendBtn, (!input.trim() || asking) && styles.sendBtnDisabled]}
-            onPress={() => sendQuestion()}
-            disabled={!input.trim() || asking}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.sendBtnText}>↑</Text>
-          </TouchableOpacity>
-        </View>
-      </KeyboardAvoidingView>
+      {/* Input bar */}
+      <View style={[styles.inputBar, Platform.OS === 'android' && { marginBottom: kbOffset }]}>
+        <TextInput
+          style={styles.input}
+          placeholder="Pose ta question..."
+          placeholderTextColor="#444"
+          value={input}
+          onChangeText={setInput}
+          multiline
+          returnKeyType="send"
+          onSubmitEditing={() => sendQuestion()}
+          color="#fff"
+        />
+        <TouchableOpacity
+          style={[styles.sendBtn, (!input.trim() || asking) && styles.sendBtnDisabled]}
+          onPress={() => sendQuestion()}
+          disabled={!input.trim() || asking}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.sendBtnText}>↑</Text>
+        </TouchableOpacity>
+      </View>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      {Platform.OS === 'ios' ? (
+        <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={88}>
+          {chatContent}
+        </KeyboardAvoidingView>
+      ) : (
+        <View style={{ flex: 1 }}>{chatContent}</View>
+      )}
     </SafeAreaView>
   );
 }
