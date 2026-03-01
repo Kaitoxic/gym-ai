@@ -97,10 +97,14 @@ export default function WorkoutScreen({ navigation }: Props) {
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
-  if (!activeDay) {
-    navigation.goBack();
-    return null;
-  }
+  // If activeDay is cleared (after cancel/finish), go back — must be in useEffect, not render
+  useEffect(() => {
+    if (!activeDay) {
+      navigation.goBack();
+    }
+  }, [activeDay]);
+
+  if (!activeDay) return null;
 
   const groups = groupByExercise(activeSets);
   const completedCount = activeSets.filter((s) => s.completed).length;
