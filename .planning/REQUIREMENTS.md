@@ -106,24 +106,51 @@
 
 ## Traceability
 
-Which phases cover which requirements. Updated during roadmap creation.
+Which phases cover which requirements. Updated 2026-03-01 during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| AUTH-01 – AUTH-05 | Phase TBD | Pending |
-| ONBD-01 – ONBD-06 | Phase TBD | Pending |
-| PROG-01 – PROG-05 | Phase TBD | Pending |
-| EXER-01 – EXER-05 | Phase TBD | Pending |
-| TRKR-01 – TRKR-03 | Phase TBD | Pending |
-| NUTR-01 – NUTR-03 | Phase TBD | Pending |
-| AIMD-01 – AIMD-04 | Phase TBD | Pending |
-| BACK-01 – BACK-04 | Phase TBD | Pending |
+| BACK-01 | Phase 1 — Backend Foundation + AI Proxy | Pending |
+| BACK-02 | Phase 1 — Backend Foundation + AI Proxy | Pending |
+| BACK-03 | Phase 1 — Backend Foundation + AI Proxy | Pending |
+| BACK-04 | Phase 1 — Backend Foundation + AI Proxy | Pending |
+| AUTH-01 | Phase 2 — Authentication (Mobile Client) | Pending |
+| AUTH-02 | Phase 2 — Authentication (Mobile Client) | Pending |
+| AUTH-03 | Phase 2 — Authentication (Mobile Client) | Pending |
+| AUTH-04 | Phase 2 — Authentication (Mobile Client) | Pending |
+| AUTH-05 | Phase 2 — Authentication (Mobile Client) | Pending |
+| ONBD-01 | Phase 3 — Onboarding + User Profile | Pending |
+| ONBD-02 | Phase 3 — Onboarding + User Profile | Pending |
+| ONBD-03 | Phase 3 — Onboarding + User Profile | Pending |
+| ONBD-04 | Phase 3 — Onboarding + User Profile | Pending |
+| ONBD-05 | Phase 3 — Onboarding + User Profile | Pending |
+| ONBD-06 | Phase 3 — Onboarding + User Profile | Pending |
+| EXER-01 | Phase 4 — Exercise Library | Pending |
+| EXER-02 | Phase 4 — Exercise Library | Pending |
+| EXER-03 | Phase 4 — Exercise Library | Pending |
+| EXER-04 | Phase 4 — Exercise Library | Pending |
+| EXER-05 | Phase 4 — Exercise Library | Pending |
+| PROG-01 | Phase 5 — AI Program Generation | Pending |
+| PROG-03 | Phase 5 — AI Program Generation | Pending |
+| PROG-04 | Phase 5 — AI Program Generation | Pending |
+| PROG-05 | Phase 5 — AI Program Generation | Pending |
+| TRKR-01 | Phase 6 — Workout Completion Tracking | Pending |
+| TRKR-02 | Phase 6 — Workout Completion Tracking | Pending |
+| TRKR-03 | Phase 6 — Workout Completion Tracking | Pending |
+| PROG-02 | Phase 7 — On-Demand Session Adaptation | Pending |
+| NUTR-01 | Phase 8 — Nutrition AI | Pending |
+| NUTR-02 | Phase 8 — Nutrition AI | Pending |
+| NUTR-03 | Phase 8 — Nutrition AI | Pending |
+| AIMD-01 | Phase 9 — AI Model Settings | Pending |
+| AIMD-02 | Phase 9 — AI Model Settings | Pending |
+| AIMD-03 | Phase 9 — AI Model Settings | Pending |
+| AIMD-04 | Phase 9 — AI Model Settings | Pending |
 
 **Coverage:**
-- v1 requirements: 31 total
-- Mapped to phases: 0 (pending roadmap)
-- Unmapped: 31 ⚠️
+- v1 requirements: 35 total
+- Mapped to phases: 35 ✓
+- Unmapped: 0 ✓
 
 ---
 *Requirements defined: 2026-03-01*
-*Last updated: 2026-03-01 after initial definition*
+*Last updated: 2026-03-01 — traceability populated after roadmap creation (9 phases)*
