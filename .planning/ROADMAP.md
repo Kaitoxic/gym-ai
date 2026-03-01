@@ -34,7 +34,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User profile data (created in a later phase) can be written to and read from Supabase PostgreSQL without data loss
   4. Exercise library data can be seeded server-side and served via a GET /exercises endpoint with client-side MMKV caching for offline use
   5. The backend is deployed (Railway or equivalent) and reachable from a physical device on mobile data
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 01-01: Express app scaffolding, Railway deployment, environment config
@@ -52,7 +52,7 @@ Plans:
   3. User closes and reopens the app and remains logged in (session persists across restarts)
   4. User taps "Forgot password" and receives an email link that resets their password
   5. User can sign in with their Google or Apple account via OAuth and land on the app's first screen
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 02-01: Supabase Auth SDK integration, authStore (Zustand + MMKV persist), JWT header injection in API client
@@ -69,7 +69,7 @@ Plans:
   2. User's goal, fitness level, injury history, preferred exercises, body metrics, and available days/equipment are all saved to their cloud profile
   3. A returning user on a new device sees their profile pre-populated from the cloud (no re-onboarding required)
   4. User receives basic AI-generated nutritional guidance text at the end of onboarding based on their goal and profile
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 03-01: User profile DB schema (Supabase) + POST /users/profile endpoint
@@ -89,7 +89,7 @@ Plans:
   3. User can search exercises by name and get results in under 500ms
   4. User can filter exercises by muscle group, equipment required, and difficulty level — filters combine correctly
   5. User can view any exercise offline (instructions, images, muscle diagram) after the library has been cached once
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 04-01: Exercise data source decision + seed script (200–500 exercises with full metadata)
@@ -107,7 +107,7 @@ Plans:
   2. Every exercise in the generated program exists in the app's exercise library — no hallucinated names (backend validates all slugs post-generation)
   3. User can browse their program organized by week and day, and tap any exercise to see its library detail
   4. User can send a text prompt to adjust or regenerate their program and receive an updated program that respects their original profile constraints
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 05-01: Program + workout_sessions DB schema, POST /ai/generate-program endpoint, promptBuilder with injury constraints + exercise slug grounding
@@ -125,7 +125,7 @@ Plans:
   2. User can view a history screen showing completed and skipped workouts by day, with streak or summary metrics
   3. Completion data synced across devices — marking a workout done on one device reflects immediately on another device for the same user
   4. Workout completion recorded while offline is queued and synced automatically when connectivity returns
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 06-01: Completions DB schema (event-log model with timestamp, not mutable boolean), POST /completions endpoint
@@ -141,7 +141,7 @@ Plans:
   2. User receives an adapted version of their scheduled session that respects their time and equipment constraints
   3. Every exercise in the adapted session exists in the exercise library (no hallucinated names)
   4. The adapted session can be marked as completed or skipped the same as a regular scheduled session
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 07-01: POST /ai/adapt-session endpoint, constraint-driven prompt design
@@ -155,7 +155,7 @@ Plans:
   1. User sees personalized macro targets (protein, carbs, fat in grams) derived from their goal and body metrics
   2. User sees AI-generated meal suggestions aligned with their training goal — no food logging required to receive them
   3. When user updates their goal or body metrics in their profile, macro targets and meal suggestions update to reflect the new profile
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 08-01: POST /ai/meal-suggestion + POST /ai/macro-targets endpoints, nutrition prompt design
@@ -171,7 +171,7 @@ Plans:
   2. User can select a specific model within their chosen provider (e.g., GPT-4o, Gemini Flash, Claude 3.5 Sonnet)
   3. App works out-of-the-box with a sensible default model (e.g., Gemini Flash) without requiring any configuration
   4. User sees an estimated token cost or usage indicator after each AI request (program generation, session adaptation, meal suggestion)
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
 - [ ] 09-01: PATCH /users/ai-preference endpoint, aiPreference in user profile schema
