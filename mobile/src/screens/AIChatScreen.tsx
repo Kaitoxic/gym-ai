@@ -11,7 +11,7 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAISettingsStore } from '../store/aiSettingsStore';
@@ -62,6 +62,7 @@ export default function AIChatScreen() {
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [conversationTitle, setConversationTitle] = useState(title);
   const [kbOffset, setKbOffset] = useState(0);
+  const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
 
   // Set navigation header title
@@ -214,7 +215,7 @@ export default function AIChatScreen() {
       </ScrollView>
 
       {/* Input bar */}
-      <View style={[styles.inputBar, Platform.OS === 'android' && { marginBottom: kbOffset }]}>
+      <View style={[styles.inputBar, Platform.OS === 'android' && { marginBottom: Math.max(0, kbOffset - insets.bottom) }]}>
         <TextInput
           style={styles.input}
           placeholder="Pose ta question..."
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
     gap: 10,
     padding: 12,
-    paddingBottom: 16,
+    paddingBottom: 8,
     backgroundColor: '#0f0f0f',
     borderTopWidth: 1,
     borderTopColor: '#1e1e1e',
