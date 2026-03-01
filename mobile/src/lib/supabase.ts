@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import * as SecureStore from 'expo-secure-store';
+import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
 /**
@@ -85,3 +86,21 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 });
+
+// Handle deep link auth callbacks (email confirmation, magic links)
+// When user taps the link in their email, the app opens with the token in the URL
+if (Platform.OS !== 'web') {
+  // Handle URL when app is already open
+  Linking.addEventListener('url', ({ url }) => {
+    if (url) {
+      supabase.auth.getSessionFromUrl(url).catch(() => {});
+    }
+  });
+
+  // Handle URL when app is launched from background via deep link
+  Linking.getInitialURL().then((url) => {
+    if (url) {
+      supabase.auth.getSessionFromUrl(url).catch(() => {});
+    }
+  });
+}

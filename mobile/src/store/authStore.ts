@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
+import * as Linking from 'expo-linking';
 
 interface AuthState {
   user: User | null;
@@ -35,7 +36,12 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signUp: async (email, password) => {
-    const { error } = await supabase.auth.signUp({ email, password });
+    const redirectTo = Linking.createURL('/auth/confirm');
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: redirectTo },
+    });
     return { error: error ? new Error(error.message) : null };
   },
 
