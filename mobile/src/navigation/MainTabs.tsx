@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
 import HomeNavigator from './HomeNavigator';
 import ExercisesNavigator from './ExercisesNavigator';
-import ProfileScreen from '../screens/ProfileScreen';
+import ProfileNavigator from './ProfileNavigator';
 import StatsScreen from '../screens/StatsScreen';
 import NutritionScreen from '../screens/NutritionScreen';
 import CardioScreen from '../screens/CardioScreen';
@@ -51,7 +51,7 @@ export default function MainTabs() {
       <Tab.Screen name="StatsTab" component={StatsScreen} options={{ title: 'Stats' }} />
       <Tab.Screen name="CardioTab" component={CardioScreen} options={{ title: 'Cardio' }} />
       <Tab.Screen name="NutritionTab" component={NutritionScreen} options={{ title: 'Nutrition' }} />
-      <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'Profil' }} />
+      <Tab.Screen name="ProfileTab" component={ProfileNavigator} options={{ title: 'Profil' }} />
     </Tab.Navigator>
   );
 }

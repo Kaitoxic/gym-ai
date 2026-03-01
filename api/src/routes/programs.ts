@@ -55,7 +55,7 @@ function getSetRepScheme(goal: string) {
 /** Returns the recommended day split name(s) based on days per week — Hersovyac methodology */
 function getDaySplitGuide(days: number): string {
   if (days <= 2) return 'Full Body x2 (Full Body A, Full Body B). Each session targets all major muscle groups with 1 compound per pattern.';
-  if (days === 3) return 'Push / Pull / Legs (PPL). Day 1: Push, Day 2: Pull, Day 3: Legs.';
+  if (days === 3) return 'Full Body x3 (Full Body A, Full Body B, Full Body C). Each session targets all major muscle groups with different exercise variations to avoid repetition.';
   if (days === 4) return 'Upper / Lower split x2 (Upper A, Lower A, Upper B, Lower B). Alternate upper and lower days.';
   if (days === 5) return 'PPL + Upper/Lower hybrid (Push, Pull, Legs, Upper, Lower).';
   return 'Push / Pull / Legs repeated twice per week (PPL x2: Push A, Pull A, Legs A, Push B, Pull B, Legs B).';

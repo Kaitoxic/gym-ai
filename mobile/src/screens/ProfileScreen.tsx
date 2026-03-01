@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import type { ProfileStackParamList } from '../navigation/ProfileNavigator';
 import { useProfileStore } from '../store/profileStore';
 import { useAuthStore } from '../store/authStore';
 import { useAISettingsStore, CoachingStyle, DetailLevel } from '../store/aiSettingsStore';
@@ -62,7 +64,9 @@ const optStyles = StyleSheet.create({
 
 // ─── Main Screen ──────────────────────────────────────────────────
 
-export default function ProfileScreen() {
+type Props = NativeStackScreenProps<ProfileStackParamList, 'Profile'>;
+
+export default function ProfileScreen({ navigation }: Props) {
   const { profile } = useProfileStore();
   const { signOut } = useAuthStore();
   const { coaching_style, detail_level, loaded, load, setCoachingStyle, setDetailLevel } = useAISettingsStore();
@@ -96,7 +100,16 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Mon Profil</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title}>Mon Profil</Text>
+          <TouchableOpacity
+            style={styles.editBtn}
+            onPress={() => navigation.navigate('ProfileEdit')}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.editBtnText}>Modifier</Text>
+          </TouchableOpacity>
+        </View>
 
         {profile ? (
           <View style={styles.card}>
@@ -174,7 +187,17 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f0f' },
   content: { padding: 20, paddingBottom: 40 },
-  title: { color: '#ffffff', fontSize: 24, fontWeight: '700', marginBottom: 20 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 },
+  title: { color: '#ffffff', fontSize: 24, fontWeight: '700' },
+  editBtn: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#a78bfa66',
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  editBtnText: { color: '#a78bfa', fontSize: 13, fontWeight: '700' },
   card: {
     backgroundColor: '#1a1a1a',
     borderRadius: 14,
