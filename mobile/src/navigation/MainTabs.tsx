@@ -4,14 +4,16 @@ import { View, Text, StyleSheet } from 'react-native';
 import HomeNavigator from './HomeNavigator';
 import ExercisesNavigator from './ExercisesNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
+import StatsScreen from '../screens/StatsScreen';
 
 const Tab = createBottomTabNavigator();
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   const icons: Record<string, string> = {
-    Home: '🏠',
-    Exercises: '💪',
-    Profile: '👤',
+    HomeTab: '🏠',
+    ExercisesTab: '💪',
+    StatsTab: '📊',
+    ProfileTab: '👤',
   };
   return (
     <View style={styles.iconWrap}>
@@ -36,13 +38,14 @@ export default function MainTabs() {
         ),
       })}
     >
-      <Tab.Screen name="Home" component={HomeNavigator} />
+      <Tab.Screen name="HomeTab" component={HomeNavigator} options={{ title: 'Home' }} />
       <Tab.Screen
-        name="Exercises"
+        name="ExercisesTab"
         component={ExercisesNavigator}
-        options={{ unmountOnBlur: false }}
+        options={{ title: 'Exercises', unmountOnBlur: false }}
       />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="StatsTab" component={StatsScreen} options={{ title: 'Stats' }} />
+      <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'Profile' }} />
     </Tab.Navigator>
   );
 }
