@@ -6,12 +6,16 @@ import {
   StyleSheet,
   SafeAreaView,
   ActivityIndicator,
+  TouchableOpacity,
 } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeNavigator';
 import { useProgramStore, type Program, type ProgramDay, type ProgramExercise } from '../store/programStore';
+import { useWorkoutStore } from '../store/workoutStore';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'ProgramDetail'>;
+type Nav = NativeStackNavigationProp<HomeStackParamList, 'ProgramDetail'>;
 
 function ExerciseRow({ ex }: { ex: ProgramExercise }) {
   return (
@@ -28,17 +32,28 @@ function ExerciseRow({ ex }: { ex: ProgramExercise }) {
   );
 }
 
-function DayCard({ day }: { day: ProgramDay }) {
+function DayCard({ day, programId }: { day: ProgramDay; programId: string }) {
+  const navigation = useNavigation<Nav>();
+  const { startWorkout } = useWorkoutStore();
+
+  const handleStart = () => {
+    startWorkout(day, programId);
+    navigation.navigate('Workout');
+  };
+
   return (
     <View style={styles.dayCard}>
       <View style={styles.dayHeader}>
         <View style={styles.dayBadge}>
           <Text style={styles.dayBadgeText}>Day {day.day}</Text>
         </View>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text style={styles.dayName}>{day.name}</Text>
           {day.focus ? <Text style={styles.dayFocus}>{day.focus}</Text> : null}
         </View>
+        <TouchableOpacity style={styles.startBtn} onPress={handleStart} activeOpacity={0.8}>
+          <Text style={styles.startBtnText}>▶ Start</Text>
+        </TouchableOpacity>
       </View>
       {(day.exercises ?? []).map((ex, i) => (
         <ExerciseRow key={i} ex={ex} />
@@ -112,7 +127,7 @@ export default function ProgramDetailScreen({ route }: Props) {
         {/* Days */}
         <Text style={styles.sectionTitle}>Weekly Schedule</Text>
         {(program.schedule ?? []).map((day) => (
-          <DayCard key={day.day} day={day} />
+          <DayCard key={day.day} day={day} programId={program.id} />
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -155,7 +170,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#2a2a2a',
   },
-  dayHeader: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12, gap: 12 },
+  dayHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12, gap: 10 },
   dayBadge: {
     backgroundColor: '#6366f1',
     borderRadius: 8,
@@ -166,6 +181,13 @@ const styles = StyleSheet.create({
   dayBadgeText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   dayName: { color: '#ffffff', fontSize: 15, fontWeight: '700' },
   dayFocus: { color: '#888', fontSize: 12, marginTop: 2 },
+  startBtn: {
+    backgroundColor: '#22c55e',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  startBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   exRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

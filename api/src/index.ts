@@ -10,6 +10,7 @@ import aiProxyRouter from './routes/ai/proxy';
 import exercisesRouter from './routes/exercises';
 import usersRouter from './routes/users';
 import programsRouter from './routes/programs';
+import workoutsRouter from './routes/workouts';
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/ai', aiProxyRouter);
 app.use('/exercises', exercisesRouter);
 app.use('/users', usersRouter);
 app.use('/programs', programsRouter);
+app.use('/workouts', workoutsRouter);
 
 // Global error handler (must be last)
 app.use(errorHandler);
