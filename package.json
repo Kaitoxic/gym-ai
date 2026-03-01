@@ -1,0 +1,35 @@
+{
+  "name": "gym-coach-app-api",
+  "version": "1.0.0",
+  "description": "GymCoach AI backend proxy + REST API",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "nodemon --exec ts-node src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2",
+    "@types/jsonwebtoken": "^9.0.10",
+    "cors": "^2.8.5",
+    "dotenv": "^16",
+    "express": "^5",
+    "helmet": "^8",
+    "jsonwebtoken": "^9.0.3",
+    "openai": "^6.25.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8",
+    "@types/express": "^5",
+    "@types/node": "^20",
+    "nodemon": "^3",
+    "ts-node": "^10.9",
+    "typescript": "^5"
+  }
+}
