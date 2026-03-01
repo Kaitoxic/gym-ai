@@ -215,7 +215,12 @@ export default function AIChatScreen() {
       </ScrollView>
 
       {/* Input bar */}
-      <View style={[styles.inputBar, Platform.OS === 'android' && { marginBottom: Math.max(0, kbOffset - insets.bottom) }]}>
+      <View style={[
+        styles.inputBar,
+        Platform.OS === 'android' && {
+          paddingBottom: kbOffset > 0 ? kbOffset : insets.bottom + 8,
+        },
+      ]}>
         <TextInput
           style={styles.input}
           placeholder="Pose ta question..."
@@ -240,7 +245,7 @@ export default function AIChatScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {Platform.OS === 'ios' ? (
         <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={88}>
           {chatContent}
