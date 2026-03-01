@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProfileStore } from '../store/profileStore';
 import { apiClient } from '../lib/apiClient';
 
-// ─── Cardio recommendations ──────────────────────────────────────
+// ─── Cardio recommendations ───────────────────────────────────────────────────
 
 interface CardioRec {
   lissSteps: string;
@@ -30,28 +31,24 @@ function computeCardioRec(profile: {
   const level = profile.fitness_level ?? 'beginner';
   const goal = profile.goal ?? 'general_fitness';
 
-  // LISS steps per day
   const lissMap: Record<string, string> = {
     beginner: '7 000 – 10 000 pas/jour',
     intermediate: '10 000 – 15 000 pas/jour',
     advanced: '12 000 – 20 000 pas/jour',
   };
 
-  // HIIT sessions per week
   const hiitMap: Record<string, string> = {
     beginner: '0 – 1x / semaine',
     intermediate: '1x / semaine',
     advanced: '1 – 2x / semaine',
   };
 
-  // MIIT sessions per week
   const miitMap: Record<string, string> = {
     beginner: '0 – 1x / semaine',
     intermediate: '1 – 2x / semaine',
     advanced: '2 – 3x / semaine',
   };
 
-  // Focus message by goal
   const focusMap: Record<string, string> = {
     fat_loss: 'Priorité LISS quotidien + 1 HIIT/semaine pour maximiser la dépense calorique.',
     muscle_gain: 'Privilégier le LISS léger pour la récupération. Éviter le HIIT avant les séances de jambes.',
@@ -68,14 +65,25 @@ function computeCardioRec(profile: {
   };
 }
 
-// ─── Chat types ───────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ChatMessage {
+  id?: string;
   role: 'user' | 'ai';
   text: string;
+  created_at?: string;
 }
 
-// ─── Info card ────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatTime(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) +
+    ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── Info card ────────────────────────────────────────────────────────────────
 
 function CardioInfoCard({
   emoji,
@@ -112,7 +120,7 @@ const infoStyles = StyleSheet.create({
   label: { color: '#666', fontSize: 10, textAlign: 'center' },
 });
 
-// ─── Main Screen ─────────────────────────────────────────────────
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function CardioScreen() {
   const { profile } = useProfileStore();
@@ -121,6 +129,7 @@ export default function CardioScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [asking, setAsking] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const scrollRef = useRef<ScrollView>(null);
 
   const levelLabels: Record<string, string> = {
@@ -135,6 +144,52 @@ export default function CardioScreen() {
     endurance: 'Endurance',
     general_fitness: 'Forme générale',
     powerbuilding: 'Powerbuilding',
+  };
+
+  // Load history on mount
+  const loadHistory = useCallback(async () => {
+    setLoadingHistory(true);
+    try {
+      const res = await apiClient.get<{ messages: { id: string; role: string; content: string; created_at: string }[] }>(
+        '/cardio/history'
+      );
+      const loaded: ChatMessage[] = res.data.messages.map((m) => ({
+        id: m.id,
+        role: m.role as 'user' | 'ai',
+        text: m.content,
+        created_at: m.created_at,
+      }));
+      setMessages(loaded);
+    } catch {
+      // Fail silently
+    } finally {
+      setLoadingHistory(false);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 150);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  const clearHistory = () => {
+    Alert.alert(
+      'Nouvelle conversation',
+      "Effacer tout l'historique cardio ?",
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Effacer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiClient.delete('/cardio/history');
+              setMessages([]);
+            } catch {}
+          },
+        },
+      ]
+    );
   };
 
   const sendQuestion = async () => {
@@ -173,9 +228,17 @@ export default function CardioScreen() {
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Cardio</Text>
+          {/* Header row */}
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Cardio</Text>
+            {messages.length > 0 && (
+              <TouchableOpacity style={styles.newChatBtn} onPress={clearHistory} activeOpacity={0.7}>
+                <Text style={styles.newChatText}>+ Nouvelle</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-          {/* Profile badge */}
+          {/* Profile badges */}
           <View style={styles.badgeRow}>
             {profile?.fitness_level && (
               <View style={styles.badge}>
@@ -200,26 +263,11 @@ export default function CardioScreen() {
 
           {/* Info cards */}
           <View style={styles.cardRow}>
-            <CardioInfoCard
-              emoji="🚶"
-              label="LISS quotidien"
-              value={rec.lissSteps}
-              color="#22d3ee"
-            />
+            <CardioInfoCard emoji="🚶" label="LISS quotidien" value={rec.lissSteps} color="#22d3ee" />
           </View>
           <View style={styles.cardRow}>
-            <CardioInfoCard
-              emoji="⚡"
-              label="HIIT / semaine"
-              value={rec.hiitFreq}
-              color="#f59e0b"
-            />
-            <CardioInfoCard
-              emoji="🏃"
-              label="MIIT / semaine"
-              value={rec.miitFreq}
-              color="#a78bfa"
-            />
+            <CardioInfoCard emoji="⚡" label="HIIT / semaine" value={rec.hiitFreq} color="#f59e0b" />
+            <CardioInfoCard emoji="🏃" label="MIIT / semaine" value={rec.miitFreq} color="#a78bfa" />
           </View>
 
           {/* Tips */}
@@ -231,10 +279,12 @@ export default function CardioScreen() {
             <Text style={styles.tipLine}>• HIIT : 10-20 min max — rameur, sprint, airbike (30s / 30s)</Text>
           </View>
 
-          {/* Chat */}
+          {/* Chat section */}
           <Text style={styles.chatTitle}>Coach IA Cardio</Text>
 
-          {messages.length === 0 && (
+          {loadingHistory ? (
+            <ActivityIndicator color="#22d3ee" style={{ marginVertical: 20 }} />
+          ) : messages.length === 0 ? (
             <View style={styles.chatEmpty}>
               <Text style={styles.chatEmptyText}>
                 Posez une question sur votre cardio, le VO2max ou les méthodes LISS/HIIT/MIIT.
@@ -254,24 +304,28 @@ export default function CardioScreen() {
                 </TouchableOpacity>
               ))}
             </View>
-          )}
+          ) : null}
 
           {messages.map((msg, i) => (
-            <View
-              key={i}
-              style={[
-                styles.bubble,
-                msg.role === 'user' ? styles.bubbleUser : styles.bubbleAi,
-              ]}
-            >
-              <Text
+            <View key={msg.id ?? i}>
+              {msg.created_at && (i === 0 || messages[i - 1]?.created_at !== msg.created_at) && (
+                <Text style={styles.timestamp}>{formatTime(msg.created_at)}</Text>
+              )}
+              <View
                 style={[
-                  styles.bubbleText,
-                  msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAi,
+                  styles.bubble,
+                  msg.role === 'user' ? styles.bubbleUser : styles.bubbleAi,
                 ]}
               >
-                {msg.text}
-              </Text>
+                <Text
+                  style={[
+                    styles.bubbleText,
+                    msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAi,
+                  ]}
+                >
+                  {msg.text}
+                </Text>
+              </View>
             </View>
           ))}
 
@@ -313,7 +367,18 @@ export default function CardioScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f0f' },
   scroll: { padding: 16, paddingBottom: 20 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 16 },
+
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  title: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  newChatBtn: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  newChatText: { color: '#22d3ee', fontSize: 12, fontWeight: '600' },
 
   badgeRow: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   badge: {
@@ -382,6 +447,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   suggestionText: { color: '#888', fontSize: 13 },
+
+  timestamp: { color: '#333', fontSize: 10, textAlign: 'center', marginVertical: 6 },
 
   bubble: { borderRadius: 14, padding: 12, marginBottom: 8, maxWidth: '88%' },
   bubbleUser: {

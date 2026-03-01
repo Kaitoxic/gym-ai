@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -9,12 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useProfileStore } from '../store/profileStore';
 import { apiClient } from '../lib/apiClient';
 
-// ─── TDEE + macro computation ────────────────────────────────────
+// ─── TDEE + macro computation ─────────────────────────────────────────────────
 
 interface Targets {
   calories: number;
@@ -35,10 +36,8 @@ function computeTargets(profile: {
   const age = profile.body_age;
   if (!w || !h || !age) return null;
 
-  // BMR (Mifflin-St Jeor, gender-neutral)
   const bmr = 10 * w + 6.25 * h - 5 * age;
 
-  // Activity factor based on training days/week
   const days = (profile.available_days ?? []).length;
   const activityFactor =
     days <= 1 ? 1.2 :
@@ -47,14 +46,12 @@ function computeTargets(profile: {
 
   const tdee = Math.round(bmr * activityFactor);
 
-  // Calorie target by goal
   const goal = profile.goal ?? 'general_fitness';
   const calorieAdjust =
     goal === 'muscle_gain' ? 300 :
     goal === 'fat_loss' ? -500 : 0;
   const calories = tdee + calorieAdjust;
 
-  // Macros
   const proteinRate = goal === 'muscle_gain' ? 2.2 : goal === 'fat_loss' ? 2.0 : 1.8;
   const protein_g = Math.round(w * proteinRate);
   const fat_g = Math.round(w * 0.9);
@@ -63,14 +60,25 @@ function computeTargets(profile: {
   return { calories, protein_g, carbs_g: Math.max(carbs_g, 0), fat_g };
 }
 
-// ─── Chat types ───────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ChatMessage {
+  id?: string;
   role: 'user' | 'ai';
   text: string;
+  created_at?: string;
 }
 
-// ─── Macro card ───────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function formatTime(iso?: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) +
+    ' ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
+// ─── Macro card ───────────────────────────────────────────────────────────────
 
 function MacroCard({ label, value, unit, color }: { label: string; value: number; unit: string; color: string }) {
   return (
@@ -95,7 +103,7 @@ const macroStyles = StyleSheet.create({
   label: { color: '#888', fontSize: 10, marginTop: 3, textAlign: 'center' },
 });
 
-// ─── Main Screen ─────────────────────────────────────────────────
+// ─── Main Screen ──────────────────────────────────────────────────────────────
 
 export default function NutritionScreen() {
   const { profile } = useProfileStore();
@@ -104,6 +112,7 @@ export default function NutritionScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [asking, setAsking] = useState(false);
+  const [loadingHistory, setLoadingHistory] = useState(true);
   const scrollRef = useRef<ScrollView>(null);
 
   const goalLabels: Record<string, string> = {
@@ -111,6 +120,52 @@ export default function NutritionScreen() {
     fat_loss: 'Sèche',
     endurance: 'Endurance',
     general_fitness: 'Forme générale',
+  };
+
+  // Load history on mount
+  const loadHistory = useCallback(async () => {
+    setLoadingHistory(true);
+    try {
+      const res = await apiClient.get<{ messages: { id: string; role: string; content: string; created_at: string }[] }>(
+        '/nutrition/history'
+      );
+      const loaded: ChatMessage[] = res.data.messages.map((m) => ({
+        id: m.id,
+        role: m.role as 'user' | 'ai',
+        text: m.content,
+        created_at: m.created_at,
+      }));
+      setMessages(loaded);
+    } catch {
+      // Fail silently — chat works even without history
+    } finally {
+      setLoadingHistory(false);
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 150);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadHistory();
+  }, [loadHistory]);
+
+  const clearHistory = () => {
+    Alert.alert(
+      'Nouvelle conversation',
+      "Effacer tout l'historique nutrition ?",
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Effacer',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await apiClient.delete('/nutrition/history');
+              setMessages([]);
+            } catch {}
+          },
+        },
+      ]
+    );
   };
 
   const sendQuestion = async () => {
@@ -146,7 +201,15 @@ export default function NutritionScreen() {
           contentContainerStyle={styles.scroll}
           showsVerticalScrollIndicator={false}
         >
-          <Text style={styles.title}>Nutrition</Text>
+          {/* Header row */}
+          <View style={styles.headerRow}>
+            <Text style={styles.title}>Nutrition</Text>
+            {messages.length > 0 && (
+              <TouchableOpacity style={styles.newChatBtn} onPress={clearHistory} activeOpacity={0.7}>
+                <Text style={styles.newChatText}>+ Nouvelle</Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
           {/* Targets */}
           {targets ? (
@@ -173,10 +236,12 @@ export default function NutritionScreen() {
             </View>
           )}
 
-          {/* Chat */}
+          {/* Chat section */}
           <Text style={styles.chatTitle}>Conseiller IA</Text>
 
-          {messages.length === 0 && (
+          {loadingHistory ? (
+            <ActivityIndicator color="#a78bfa" style={{ marginVertical: 20 }} />
+          ) : messages.length === 0 ? (
             <View style={styles.chatEmpty}>
               <Text style={styles.chatEmptyText}>
                 Posez une question sur votre alimentation, vos macros ou la nutrition sportive.
@@ -185,23 +250,25 @@ export default function NutritionScreen() {
                 <TouchableOpacity
                   key={q}
                   style={styles.suggestion}
-                  onPress={() => { setInput(q); }}
+                  onPress={() => setInput(q)}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.suggestionText}>{q}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-          )}
+          ) : null}
 
           {messages.map((msg, i) => (
-            <View
-              key={i}
-              style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAi]}
-            >
-              <Text style={[styles.bubbleText, msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAi]}>
-                {msg.text}
-              </Text>
+            <View key={msg.id ?? i}>
+              {msg.created_at && (i === 0 || messages[i - 1]?.created_at !== msg.created_at) && (
+                <Text style={styles.timestamp}>{formatTime(msg.created_at)}</Text>
+              )}
+              <View style={[styles.bubble, msg.role === 'user' ? styles.bubbleUser : styles.bubbleAi]}>
+                <Text style={[styles.bubbleText, msg.role === 'user' ? styles.bubbleTextUser : styles.bubbleTextAi]}>
+                  {msg.text}
+                </Text>
+              </View>
             </View>
           ))}
 
@@ -211,7 +278,6 @@ export default function NutritionScreen() {
             </View>
           )}
 
-          {/* Spacer for input bar */}
           <View style={{ height: 80 }} />
         </ScrollView>
 
@@ -244,7 +310,18 @@ export default function NutritionScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f0f' },
   scroll: { padding: 16, paddingBottom: 20 },
-  title: { color: '#fff', fontSize: 24, fontWeight: '700', marginBottom: 16 },
+
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 },
+  title: { color: '#fff', fontSize: 24, fontWeight: '700' },
+  newChatBtn: {
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  newChatText: { color: '#a78bfa', fontSize: 12, fontWeight: '600' },
 
   goalBadge: {
     backgroundColor: '#a78bfa22',
@@ -292,6 +369,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   suggestionText: { color: '#888', fontSize: 13 },
+
+  timestamp: { color: '#333', fontSize: 10, textAlign: 'center', marginVertical: 6 },
 
   bubble: { borderRadius: 14, padding: 12, marginBottom: 8, maxWidth: '88%' },
   bubbleUser: { backgroundColor: '#a78bfa22', alignSelf: 'flex-end', borderWidth: 1, borderColor: '#a78bfa44' },
