@@ -13,6 +13,9 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '../navigation/AuthNavigator';
 import { useAuthStore } from '../store/authStore';
 
 const schema = z.object({
@@ -22,11 +25,8 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
-interface Props {
-  onNavigateToRegister: () => void;
-}
-
-export default function LoginScreen({ onNavigateToRegister }: Props) {
+export default function LoginScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const signIn = useAuthStore((s) => s.signIn);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -114,7 +114,7 @@ export default function LoginScreen({ onNavigateToRegister }: Props) {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={onNavigateToRegister} style={styles.linkWrapper}>
+        <TouchableOpacity onPress={() => navigation.navigate('Register')} style={styles.linkWrapper}>
           <Text style={styles.link}>
             Don't have an account?{' '}
             <Text style={styles.linkBold}>Create one</Text>

@@ -1,21 +1,34 @@
 import React, { useEffect } from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
+import { NavigationContainer } from '@react-navigation/native';
 import { useAuthStore } from './src/store/authStore';
-import LoginScreen from './src/screens/LoginScreen';
-import RegisterScreen from './src/screens/RegisterScreen';
-
-type AuthScreen = 'login' | 'register';
+import { useProfileStore } from './src/store/profileStore';
+import AuthNavigator from './src/navigation/AuthNavigator';
+import OnboardingNavigator from './src/navigation/OnboardingNavigator';
+import MainTabs from './src/navigation/MainTabs';
 
 export default function App() {
-  const { user, loading, initialize } = useAuthStore();
-  const [authScreen, setAuthScreen] = React.useState<AuthScreen>('login');
+  const { user, loading: authLoading, initialize } = useAuthStore();
+  const { profile, loading: profileLoading, fetchProfile } = useProfileStore();
 
+  // Initialize auth on launch
   useEffect(() => {
     initialize();
   }, [initialize]);
 
-  if (loading) {
+  // Fetch profile when user is authenticated
+  useEffect(() => {
+    if (user) {
+      fetchProfile();
+    } else {
+      useProfileStore.getState().reset();
+    }
+  }, [user]);
+
+  const isLoading = authLoading || (!!user && profileLoading && profile === null);
+
+  if (isLoading) {
     return (
       <View style={styles.loader}>
         <ActivityIndicator size="large" color="#6C47FF" />
@@ -24,27 +37,20 @@ export default function App() {
     );
   }
 
-  // Authenticated — placeholder for main app (Phase 3+)
-  if (user) {
-    return (
-      <View style={styles.loader}>
-        <ActivityIndicator size="small" color="#6C47FF" />
-        {/* TODO Phase 3: replace with main tab navigator */}
-        <StatusBar style="light" />
-      </View>
-    );
-  }
-
-  // Unauthenticated — show auth screens
   return (
-    <>
+    <NavigationContainer>
       <StatusBar style="light" />
-      {authScreen === 'login' ? (
-        <LoginScreen onNavigateToRegister={() => setAuthScreen('register')} />
+      {!user ? (
+        // Not logged in → Auth screens
+        <AuthNavigator />
+      ) : !profile?.onboarding_done ? (
+        // Logged in but not onboarded → Onboarding flow
+        <OnboardingNavigator />
       ) : (
-        <RegisterScreen onNavigateToLogin={() => setAuthScreen('login')} />
+        // Fully set up → Main app
+        <MainTabs />
       )}
-    </>
+    </NavigationContainer>
   );
 }
 

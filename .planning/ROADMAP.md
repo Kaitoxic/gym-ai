@@ -186,8 +186,8 @@ Phases execute in numeric order. Phase 4 (Exercise Library) can run in parallel 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Backend Foundation + AI Proxy | 4/4 | Complete | 2026-03-01 |
-| 2. Authentication (Mobile Client) | 0/4 | Not started | - |
-| 3. Onboarding + User Profile | 0/6 | Not started | - |
+| 2. Authentication (Mobile Client) | 4/4 | Complete | 2026-03-01 |
+| 3. Onboarding + User Profile | 6/6 | Complete | 2026-03-01 |
 | 4. Exercise Library | 0/5 | Not started | - |
 | 5. AI Program Generation | 0/5 | Not started | - |
 | 6. Workout Completion Tracking | 0/3 | Not started | - |

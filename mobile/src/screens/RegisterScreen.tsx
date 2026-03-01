@@ -13,6 +13,9 @@ import {
 import { useForm, Controller } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '../navigation/AuthNavigator';
 import { useAuthStore } from '../store/authStore';
 
 const schema = z
@@ -28,11 +31,8 @@ const schema = z
 
 type FormData = z.infer<typeof schema>;
 
-interface Props {
-  onNavigateToLogin: () => void;
-}
-
-export default function RegisterScreen({ onNavigateToLogin }: Props) {
+export default function RegisterScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<AuthStackParamList>>();
   const signUp = useAuthStore((s) => s.signUp);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
 
@@ -53,7 +53,7 @@ export default function RegisterScreen({ onNavigateToLogin }: Props) {
     Alert.alert(
       'Check your email',
       'We sent a confirmation link to your inbox. Please verify your email before signing in.',
-      [{ text: 'OK', onPress: onNavigateToLogin }]
+      [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
     );
   };
 
@@ -146,7 +146,7 @@ export default function RegisterScreen({ onNavigateToLogin }: Props) {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={onNavigateToLogin} style={styles.linkWrapper}>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')} style={styles.linkWrapper}>
           <Text style={styles.link}>
             Already have an account?{' '}
             <Text style={styles.linkBold}>Sign in</Text>

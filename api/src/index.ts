@@ -8,6 +8,7 @@ import { errorHandler } from './middleware/errorHandler';
 import healthDbRouter from './routes/healthDb';
 import aiProxyRouter from './routes/ai/proxy';
 import exercisesRouter from './routes/exercises';
+import usersRouter from './routes/users';
 
 const app = express();
 
@@ -25,6 +26,7 @@ app.use('/health/db', healthDbRouter);
 // Routes
 app.use('/ai', aiProxyRouter);
 app.use('/exercises', exercisesRouter);
+app.use('/users', usersRouter);
 
 // Global error handler (must be last)
 app.use(errorHandler);
