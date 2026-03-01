@@ -34,6 +34,7 @@ interface ProgramState {
   error: string | null;
 
   fetchPrograms: () => Promise<void>;
+  fetchProgramById: (id: string) => Promise<Program | null>;
   generateProgram: () => Promise<Program | null>;
   deleteProgram: (id: string) => Promise<void>;
 }
@@ -51,6 +52,15 @@ export const useProgramStore = create<ProgramState>((set, get) => ({
       set({ programs: res.data.data, loading: false });
     } catch (err: any) {
       set({ error: err.message ?? 'Failed to load programs', loading: false });
+    }
+  },
+
+  fetchProgramById: async (id: string) => {
+    try {
+      const res = await apiClient.get<{ data: Program }>(`/programs/${id}`);
+      return res.data.data;
+    } catch (err: any) {
+      return null;
     }
   },
 

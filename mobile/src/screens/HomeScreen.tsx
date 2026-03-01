@@ -63,7 +63,7 @@ export default function HomeScreen() {
     }
     const program = await generateProgram();
     if (program) {
-      navigation.navigate('ProgramDetail', { program });
+      navigation.navigate('ProgramDetail', { programId: program.id, programName: program.name });
     } else {
       Alert.alert('Error', error ?? 'Failed to generate program');
     }
@@ -121,7 +121,7 @@ export default function HomeScreen() {
         renderItem={({ item }) => (
           <ProgramCard
             program={item}
-            onPress={() => navigation.navigate('ProgramDetail', { program: item })}
+            onPress={() => navigation.navigate('ProgramDetail', { programId: item.id, programName: item.name })}
             onDelete={() => handleDelete(item)}
           />
         )}

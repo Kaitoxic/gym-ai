@@ -2,11 +2,10 @@ import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
-import type { Program } from '../store/programStore';
 
 export type HomeStackParamList = {
   Home: undefined;
-  ProgramDetail: { program: Program };
+  ProgramDetail: { programId: string; programName: string };
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -25,7 +24,7 @@ export default function HomeNavigator() {
       <Stack.Screen
         name="ProgramDetail"
         component={ProgramDetailScreen}
-        options={({ route }) => ({ title: route.params.program.name })}
+        options={({ route }) => ({ title: route.params.programName })}
       />
     </Stack.Navigator>
   );

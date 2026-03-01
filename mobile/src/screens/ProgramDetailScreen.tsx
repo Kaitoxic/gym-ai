@@ -1,21 +1,17 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
   SafeAreaView,
-  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeNavigator';
-import type { ProgramDay, ProgramExercise } from '../store/programStore';
+import { useProgramStore, type Program, type ProgramDay, type ProgramExercise } from '../store/programStore';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'ProgramDetail'>;
-
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1).replace(/_/g, ' ');
-}
 
 function ExerciseRow({ ex }: { ex: ProgramExercise }) {
   return (
@@ -41,10 +37,10 @@ function DayCard({ day }: { day: ProgramDay }) {
         </View>
         <View>
           <Text style={styles.dayName}>{day.name}</Text>
-          <Text style={styles.dayFocus}>{day.focus}</Text>
+          {day.focus ? <Text style={styles.dayFocus}>{day.focus}</Text> : null}
         </View>
       </View>
-      {day.exercises.map((ex, i) => (
+      {(day.exercises ?? []).map((ex, i) => (
         <ExerciseRow key={i} ex={ex} />
       ))}
     </View>
@@ -52,7 +48,44 @@ function DayCard({ day }: { day: ProgramDay }) {
 }
 
 export default function ProgramDetailScreen({ route }: Props) {
-  const { program } = route.params;
+  const { programId } = route.params;
+  const { fetchProgramById } = useProgramStore();
+  const [program, setProgram] = useState<Program | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      const data = await fetchProgramById(programId);
+      if (data) {
+        setProgram(data);
+      } else {
+        setError('Failed to load program.');
+      }
+      setLoading(false);
+    })();
+  }, [programId]);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#6366f1" />
+          <Text style={styles.loadingText}>Loading program...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !program) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error ?? 'Program not found.'}</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -78,7 +111,7 @@ export default function ProgramDetailScreen({ route }: Props) {
 
         {/* Days */}
         <Text style={styles.sectionTitle}>Weekly Schedule</Text>
-        {program.schedule.map((day) => (
+        {(program.schedule ?? []).map((day) => (
           <DayCard key={day.day} day={day} />
         ))}
       </ScrollView>
@@ -89,6 +122,9 @@ export default function ProgramDetailScreen({ route }: Props) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f0f' },
   content: { padding: 20, paddingBottom: 40 },
+  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+  loadingText: { color: '#888', marginTop: 12, fontSize: 14 },
+  errorText: { color: '#ef4444', fontSize: 15, textAlign: 'center' },
   title: { color: '#ffffff', fontSize: 22, fontWeight: '700', marginBottom: 10 },
   metaRow: { flexDirection: 'row', gap: 8, marginBottom: 16 },
   metaBadge: {
