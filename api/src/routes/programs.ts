@@ -310,7 +310,7 @@ Return ONLY the JSON object with this structure:
     while (attempt < 2) {
       attempt++;
       const completion = await groq.chat.completions.create({
-        model: 'llama-3.3-70b-versatile',
+        model: 'meta-llama/llama-4-scout-17b-16e-instruct',
         temperature: 0.3,
         max_tokens: 7000,
         response_format: { type: 'json_object' },
