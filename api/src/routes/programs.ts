@@ -46,7 +46,7 @@ router.post('/generate', requireAuth, checkQuota, async (req: Request, res: Resp
   try {
     // 1. Fetch user profile
     const { data: profile, error: profileError } = await supabase
-      .from('user_profiles')
+      .from('users')
       .select('*')
       .eq('id', req.user!.id)
       .single();
