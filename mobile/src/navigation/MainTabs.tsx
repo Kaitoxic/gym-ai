@@ -5,7 +5,7 @@ import HomeNavigator from './HomeNavigator';
 import ExercisesNavigator from './ExercisesNavigator';
 import ProfileNavigator from './ProfileNavigator';
 import StatsScreen from '../screens/StatsScreen';
-import AIScreen from '../screens/AIScreen';
+import AINavigator from './AINavigator';
 
 const Tab = createBottomTabNavigator();
 
@@ -47,7 +47,7 @@ export default function MainTabs() {
         options={{ title: 'Exercices', unmountOnBlur: false }}
       />
       <Tab.Screen name="StatsTab" component={StatsScreen} options={{ title: 'Stats' }} />
-      <Tab.Screen name="AITab" component={AIScreen} options={{ title: 'Coach IA' }} />
+      <Tab.Screen name="AITab" component={AINavigator} options={{ title: 'Coach IA' }} />
       <Tab.Screen name="ProfileTab" component={ProfileNavigator} options={{ title: 'Profil' }} />
     </Tab.Navigator>
   );
