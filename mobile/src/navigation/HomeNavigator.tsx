@@ -3,11 +3,13 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from '../screens/HomeScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import WorkoutScreen from '../screens/WorkoutScreen';
+import WorkoutAdaptScreen from '../screens/WorkoutAdaptScreen';
 
 export type HomeStackParamList = {
   Home: undefined;
   ProgramDetail: { programId: string; programName: string };
   Workout: undefined;
+  WorkoutAdapt: { logId: string };
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -31,7 +33,12 @@ export default function HomeNavigator() {
       <Stack.Screen
         name="Workout"
         component={WorkoutScreen}
-        options={{ title: 'Active Workout', headerBackVisible: false }}
+        options={{ title: 'Séance active', headerBackVisible: false }}
+      />
+      <Stack.Screen
+        name="WorkoutAdapt"
+        component={WorkoutAdaptScreen}
+        options={{ title: 'Suggestions IA', headerBackVisible: false }}
       />
     </Stack.Navigator>
   );

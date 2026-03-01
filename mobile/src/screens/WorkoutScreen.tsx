@@ -4,11 +4,11 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  SafeAreaView,
   TouchableOpacity,
   Alert,
   TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeNavigator';
 import { useWorkoutStore, type ActiveSet } from '../store/workoutStore';
@@ -91,15 +91,16 @@ export default function WorkoutScreen({ navigation }: Props) {
   // Elapsed timer
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const navigatingAway = useRef(false);
 
   useEffect(() => {
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
     return () => { if (timerRef.current) clearInterval(timerRef.current); };
   }, []);
 
-  // If activeDay is cleared (after cancel/finish), go back — must be in useEffect, not render
+  // Auto-goBack if activeDay cleared without explicit navigation (safety net)
   useEffect(() => {
-    if (!activeDay) {
+    if (!activeDay && !navigatingAway.current) {
       navigation.goBack();
     }
   }, [activeDay]);
@@ -112,18 +113,19 @@ export default function WorkoutScreen({ navigation }: Props) {
 
   const handleFinish = () => {
     Alert.alert(
-      'Finish Workout?',
-      `${completedCount}/${totalCount} sets completed.`,
+      'Terminer la séance ?',
+      `${completedCount}/${totalCount} séries complétées.`,
       [
-        { text: 'Keep Going', style: 'cancel' },
+        { text: 'Continuer', style: 'cancel' },
         {
-          text: 'Finish',
+          text: 'Terminer',
           onPress: async () => {
             const log = await finishWorkout();
             if (log) {
-              navigation.goBack();
+              navigatingAway.current = true;
+              navigation.replace('WorkoutAdapt', { logId: log.id });
             } else {
-              Alert.alert('Error', 'Failed to save workout. Please try again.');
+              Alert.alert('Erreur', 'Impossible de sauvegarder la séance. Réessaie.');
             }
           },
         },
@@ -132,9 +134,17 @@ export default function WorkoutScreen({ navigation }: Props) {
   };
 
   const handleCancel = () => {
-    Alert.alert('Cancel Workout?', 'Progress will be lost.', [
-      { text: 'Keep Going', style: 'cancel' },
-      { text: 'Cancel Workout', style: 'destructive', onPress: () => { cancelWorkout(); navigation.goBack(); } },
+    Alert.alert('Annuler la séance ?', 'Ta progression sera perdue.', [
+      { text: 'Continuer', style: 'cancel' },
+      {
+        text: 'Annuler la séance',
+        style: 'destructive',
+        onPress: () => {
+          navigatingAway.current = true;
+          cancelWorkout();
+          navigation.goBack();
+        },
+      },
     ]);
   };
 
@@ -187,7 +197,7 @@ export default function WorkoutScreen({ navigation }: Props) {
           activeOpacity={0.8}
         >
           <Text style={styles.finishBtnText}>
-            {saving ? 'Saving...' : 'Finish Workout'}
+            {saving ? 'Sauvegarde...' : 'Terminer la séance'}
           </Text>
         </TouchableOpacity>
       </View>

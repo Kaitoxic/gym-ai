@@ -1,8 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { supabase } from '../lib/supabase';
+import Groq from 'groq-sdk';
 
 const router = Router();
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ─── POST /workouts/log ──────────────────────────────────────────
 // Log a completed workout session
@@ -108,6 +110,82 @@ router.get('/streak', requireAuth, async (req: Request, res: Response) => {
     return res.json({ streak });
   } catch (err: any) {
     return res.status(500).json({ error: 'Unexpected error', detail: err.message });
+  }
+});
+
+// ─── POST /workouts/adapt ────────────────────────────────────────
+// AI suggestions for next session based on completed workout
+router.post('/adapt', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { day_name, sets_done } = req.body;
+    if (!day_name || !Array.isArray(sets_done)) {
+      return res.status(400).json({ error: 'day_name and sets_done are required' });
+    }
+
+    // Summarize by exercise
+    const exMap = new Map<string, { name: string; slug: string; done: any[]; total: number }>();
+    for (const s of sets_done) {
+      if (!exMap.has(s.exercise_slug)) {
+        exMap.set(s.exercise_slug, { name: s.exercise_name, slug: s.exercise_slug, done: [], total: 0 });
+      }
+      const entry = exMap.get(s.exercise_slug)!;
+      entry.total++;
+      if (s.completed) entry.done.push(s);
+    }
+
+    const summary = Array.from(exMap.values()).map((ex) => {
+      const withWeight = ex.done.filter((s) => s.weight_kg != null && s.weight_kg > 0);
+      const avgWeight = withWeight.length > 0
+        ? Math.round(withWeight.reduce((sum: number, s: any) => sum + s.weight_kg, 0) / withWeight.length * 10) / 10
+        : null;
+      const avgReps = ex.done.length > 0
+        ? Math.round(ex.done.reduce((sum: number, s: any) => sum + s.reps_done, 0) / ex.done.length)
+        : 0;
+      return { exercise_name: ex.name, exercise_slug: ex.slug, sets_completed: ex.done.length, sets_total: ex.total, avg_weight_kg: avgWeight, avg_reps: avgReps };
+    });
+
+    const prompt = `Tu es un coach sportif expert en powerbuilding (méthode Hersovyac/LouisPowerBuild).
+L'utilisateur vient de terminer une séance "${day_name}".
+
+Exercices réalisés :
+${summary.map((e) => `- ${e.exercise_name}: ${e.sets_completed}/${e.sets_total} séries${e.avg_weight_kg != null ? `, poids moyen ${e.avg_weight_kg}kg` : ' (poids de corps)'}, reps moyennes ${e.avg_reps}`).join('\n')}
+
+Pour chaque exercice, propose un ajustement pour la PROCHAINE séance :
+- Toutes séries complétées avec poids → augmenter le poids (composé +2.5-5kg, isolation +1-2.5kg)
+- Moins de 80% des séries complétées → maintenir
+- 1 seule série ou moins → décharge (-10% du poids)
+- Poids de corps → augmenter les reps
+
+Réponds uniquement en JSON :
+{
+  "suggestions": [
+    {
+      "exercise_name": "...",
+      "exercise_slug": "...",
+      "current_weight_kg": number|null,
+      "current_reps_done": number,
+      "sets_completed": number,
+      "sets_total": number,
+      "action": "increase_weight"|"increase_reps"|"maintain"|"deload",
+      "new_weight_kg": number|null,
+      "new_reps": "8-10",
+      "rationale": "explication courte en français"
+    }
+  ]
+}`;
+
+    const completion = await groq.chat.completions.create({
+      model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      max_tokens: 2000,
+      temperature: 0.4,
+    });
+
+    const parsed = JSON.parse(completion.choices[0].message.content ?? '{}');
+    return res.json({ suggestions: parsed.suggestions ?? [] });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'AI adaptation failed', detail: err.message });
   }
 });
 
