@@ -5,7 +5,7 @@ export function validateBody(schema: ZodSchema): RequestHandler {
   return (req, res, next) => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
-      res.status(400).json({ error: 'Validation failed', details: result.error.errors });
+      res.status(400).json({ error: 'Validation failed', details: result.error.issues });
       return;
     }
     req.body = result.data;

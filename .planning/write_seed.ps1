@@ -1,4 +1,6 @@
-﻿import dotenv from 'dotenv';
+$path = 'C:\Users\cleme\Documents\AI-ClaudeOpus\projets\gym-coach-app\scripts\seedExercises.ts'
+$content = @'
+import dotenv from 'dotenv';
 dotenv.config();
 
 import { supabase } from '../src/lib/supabase';
@@ -182,7 +184,7 @@ const EXERCISES: Exercise[] = [
     instructions: [
       'Get into a push-up position with forearms on the floor',
       'Body forms a straight line from head to heels',
-      'Engage core, glutes, and quads â€” do not let hips sag or rise',
+      'Engage core, glutes, and quads — do not let hips sag or rise',
       'Hold for the target duration, breathing steadily',
     ],
     image_url: null, video_url: null,
@@ -239,7 +241,7 @@ const EXERCISES: Exercise[] = [
       'Stand with feet shoulder-width apart, kettlebell on floor in front of you',
       'Hinge at hips, grip the kettlebell, hike it back between your legs',
       'Drive hips forward explosively to swing the kettlebell to chest height',
-      'Let it swing back between legs and repeat â€” power comes from hips, not arms',
+      'Let it swing back between legs and repeat — power comes from hips, not arms',
     ],
     image_url: null, video_url: null,
   },
@@ -282,7 +284,7 @@ const EXERCISES: Exercise[] = [
       'Attach a weight plate or dumbbell to a dip belt',
       'Grip parallel bars, arms locked out, feet crossed behind you',
       'Lower yourself until upper arms are parallel to the floor',
-      'Press back up to full lockout â€” keep torso upright to target triceps',
+      'Press back up to full lockout — keep torso upright to target triceps',
     ],
     image_url: null, video_url: null,
   },
@@ -297,7 +299,7 @@ const EXERCISES: Exercise[] = [
       'Hinge at hips until torso is roughly parallel to the floor',
       'Row the bar to your lower chest, driving elbows straight back',
       'Squeeze lats and rhomboids at the top, lower under control',
-      'Maintain a neutral spine throughout â€” do not round your lower back',
+      'Maintain a neutral spine throughout — do not round your lower back',
     ],
     image_url: null, video_url: null,
   },
@@ -316,3 +318,6 @@ async function main() {
 }
 
 main();
+'@
+[System.IO.File]::WriteAllText($path, $content, [System.Text.Encoding]::UTF8)
+Write-Host "Written seedExercises.ts"

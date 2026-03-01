@@ -10,7 +10,8 @@
     "dev": "nodemon --exec ts-node src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "seed:exercises": "ts-node scripts/seedExercises.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
