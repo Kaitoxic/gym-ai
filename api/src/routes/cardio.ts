@@ -2,13 +2,13 @@ import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth';
 import { supabase } from '../lib/supabase';
 import Groq from 'groq-sdk';
-import { NUTRITION_KNOWLEDGE } from '../lib/knowledge';
+import { CARDIO_KNOWLEDGE } from '../lib/knowledge';
 
 const router = Router();
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-// ─── POST /nutrition/ask ─────────────────────────────────────────
-// AI nutrition Q&A, personalised with user profile context
+// ─── POST /cardio/ask ────────────────────────────────────────────────────────
+// AI cardio Q&A, personalised with user profile + methodology knowledge
 router.post('/ask', requireAuth, async (req: Request, res: Response) => {
   try {
     const { question } = req.body;
@@ -19,17 +19,17 @@ router.post('/ask', requireAuth, async (req: Request, res: Response) => {
     // Fetch user profile for personalisation
     const { data: profile } = await supabase
       .from('users')
-      .select('goal, fitness_level, body_weight, body_height, body_age, available_days, equipment')
+      .select('goal, fitness_level, body_weight, available_days')
       .eq('id', req.user!.id)
       .single();
 
     const profileCtx = profile
-      ? `Profil de l'utilisateur : objectif=${profile.goal ?? 'non défini'}, niveau=${profile.fitness_level ?? 'non défini'}, poids=${profile.body_weight ?? '?'}kg, taille=${profile.body_height ?? '?'}cm, âge=${profile.body_age ?? '?'} ans, jours d'entraînement par semaine=${(profile.available_days ?? []).length}.`
+      ? `Profil de l'utilisateur : objectif=${profile.goal ?? 'non défini'}, niveau=${profile.fitness_level ?? 'non défini'}, poids=${profile.body_weight ?? '?'}kg, jours d'entraînement par semaine=${(profile.available_days ?? []).length}.`
       : '';
 
-    const systemPrompt = `Tu es un nutritionniste sportif expert. Tu donnes des conseils nutritionnels précis, basés sur des preuves scientifiques, adaptés à la pratique de la musculation et du powerbuilding. Tes réponses sont concises (3-5 phrases max), pratiques et en français.
+    const systemPrompt = `Tu es un coach sportif expert en cardio et conditionnement physique. Tu conseilles sur les méthodes LISS, HIIT et MIIT selon le profil et les objectifs. Tes réponses sont concises (3-5 phrases max), pratiques et en français.
 
-${NUTRITION_KNOWLEDGE}
+${CARDIO_KNOWLEDGE}
 
 ${profileCtx}`;
 
@@ -46,7 +46,7 @@ ${profileCtx}`;
     const answer = completion.choices[0].message.content ?? '';
     return res.json({ answer });
   } catch (err: any) {
-    return res.status(500).json({ error: 'AI nutrition failed', detail: err.message });
+    return res.status(500).json({ error: 'AI cardio failed', detail: err.message });
   }
 });
 

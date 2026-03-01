@@ -6,6 +6,7 @@ import ExercisesNavigator from './ExercisesNavigator';
 import ProfileScreen from '../screens/ProfileScreen';
 import StatsScreen from '../screens/StatsScreen';
 import NutritionScreen from '../screens/NutritionScreen';
+import CardioScreen from '../screens/CardioScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -14,6 +15,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     HomeTab: '🏠',
     ExercisesTab: '💪',
     StatsTab: '📊',
+    CardioTab: '🏃',
     NutritionTab: '🥗',
     ProfileTab: '👤',
   };
@@ -47,6 +49,7 @@ export default function MainTabs() {
         options={{ title: 'Exercices', unmountOnBlur: false }}
       />
       <Tab.Screen name="StatsTab" component={StatsScreen} options={{ title: 'Stats' }} />
+      <Tab.Screen name="CardioTab" component={CardioScreen} options={{ title: 'Cardio' }} />
       <Tab.Screen name="NutritionTab" component={NutritionScreen} options={{ title: 'Nutrition' }} />
       <Tab.Screen name="ProfileTab" component={ProfileScreen} options={{ title: 'Profil' }} />
     </Tab.Navigator>

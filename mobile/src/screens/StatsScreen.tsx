@@ -59,7 +59,7 @@ const barStyles = StyleSheet.create({
 
 // ─── Radar Chart ─────────────────────────────────────────────────────────────
 
-const RADAR_LABELS = ['Force', 'Endurance', 'Santé', 'Nutrition', 'Sommeil'];
+const RADAR_LABELS = ['Force', 'Endurance', 'Santé', 'Nutrition', 'Cardio', 'Sommeil'];
 const N = RADAR_LABELS.length;
 const RADAR_R = 120;
 const CENTER = RADAR_R + 36;
@@ -163,9 +163,9 @@ export default function StatsScreen() {
     return { weeklyData: weeks, weekLabels: labels };
   }, [history]);
 
-  // Radar: Force / Endurance / Santé / Sommeil (0-100)
+  // Radar: Force / Endurance / Santé / Nutrition / Cardio / Sommeil (0-100)
   const radarData = useMemo(() => {
-    if (history.length === 0) return [0, 0, 0, 0];
+    if (history.length === 0) return [0, 0, 0, 0, 0, 0];
 
     // Force: avg weight across completed sets, cap 100kg
     const allSets = history.flatMap((l) => l.sets_done ?? []);
@@ -187,8 +187,8 @@ export default function StatsScreen() {
     const recentCount = history.filter((l) => new Date(l.completed_at).getTime() >= cutoff).length;
     const sante = Math.min((recentCount / 20) * 100, 100);
 
-    // Nutrition + Sommeil: placeholder (0 until those chapters are added)
-    return [Math.round(force), Math.round(endurance), Math.round(sante), 0, 0];
+    // Nutrition + Cardio + Sommeil: placeholder (0 until tracked)
+    return [Math.round(force), Math.round(endurance), Math.round(sante), 0, 0, 0];
   }, [history]);
 
   const recent = history.slice(0, 5);
@@ -241,7 +241,7 @@ export default function StatsScreen() {
           <Text style={styles.sectionTitle}>Aperçu global</Text>
           <View style={styles.radarWrap}>
             <RadarChart data={radarData} />
-            <Text style={styles.radarHint}>Nutrition et Sommeil disponibles bientôt</Text>
+            <Text style={styles.radarHint}>Nutrition, Cardio et Sommeil disponibles bientôt</Text>
           </View>
         </View>
 
