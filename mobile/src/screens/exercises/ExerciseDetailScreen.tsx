@@ -1,13 +1,16 @@
-import React from 'react';
+﻿import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
   ScrollView,
   StyleSheet,
+  Image,
+  ActivityIndicator,
   SafeAreaView,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ExercisesStackParamList } from '../../navigation/ExercisesNavigator';
+import { getExerciseImageUrl, hasExerciseImages } from '../../lib/exerciseImages';
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, 'ExerciseDetail'>;
 
@@ -29,23 +32,79 @@ function Tag({ label, color }: { label: string; color: string }) {
   );
 }
 
+function ExerciseImageSlideshow({ slug }: { slug: string }) {
+  const [frame, setFrame] = useState<0 | 1>(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const url0 = getExerciseImageUrl(slug, 0);
+  const url1 = getExerciseImageUrl(slug, 1);
+  const currentUrl = frame === 0 ? url0 : url1;
+
+  useEffect(() => {
+    if (!url0) return;
+    setFrame(0);
+    setLoading(true);
+    setError(false);
+    intervalRef.current = setInterval(() => {
+      setFrame((f) => (f === 0 ? 1 : 0));
+    }, 1200);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [slug]);
+
+  if (!url0) return null;
+
+  return (
+    <View style={styles.imageContainer}>
+      {loading && !error && (
+        <View style={styles.imagePlaceholder}>
+          <ActivityIndicator size="large" color="#6366f1" />
+        </View>
+      )}
+      {error && (
+        <View style={styles.imagePlaceholder}>
+          <Text style={styles.imageErrorText}>Image non disponible</Text>
+        </View>
+      )}
+      {!error && currentUrl && (
+        <Image
+          source={{ uri: currentUrl }}
+          style={[styles.exerciseImage, loading && styles.hidden]}
+          resizeMode="contain"
+          onLoad={() => setLoading(false)}
+          onError={() => { setLoading(false); setError(true); }}
+        />
+      )}
+      {!loading && !error && (
+        <View style={styles.frameIndicator}>
+          <View style={[styles.frameDot, frame === 0 && styles.frameDotActive]} />
+          <View style={[styles.frameDot, frame === 1 && styles.frameDotActive]} />
+        </View>
+      )}
+    </View>
+  );
+}
+
 export default function ExerciseDetailScreen({ route }: Props) {
   const { exercise } = route.params;
   const diffColor = DIFFICULTY_COLOR[exercise.difficulty] ?? '#6366f1';
+  const showImages = hasExerciseImages(exercise.slug);
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Header */}
         <Text style={styles.name}>{exercise.name}</Text>
 
-        {/* Difficulty */}
         <View style={styles.row}>
           <Tag label={capitalize(exercise.difficulty)} color={diffColor} />
         </View>
 
-        {/* Muscle Groups */}
+        {showImages && <ExerciseImageSlideshow slug={exercise.slug} />}
+
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Muscle Groups</Text>
           <View style={styles.tagRow}>
@@ -55,7 +114,6 @@ export default function ExerciseDetailScreen({ route }: Props) {
           </View>
         </View>
 
-        {/* Equipment */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Equipment</Text>
           <View style={styles.tagRow}>
@@ -65,7 +123,6 @@ export default function ExerciseDetailScreen({ route }: Props) {
           </View>
         </View>
 
-        {/* Instructions */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Instructions</Text>
           {exercise.instructions.map((step, index) => (
@@ -88,6 +145,44 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   name: { color: '#ffffff', fontSize: 24, fontWeight: '700', marginBottom: 10 },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
+  imageContainer: {
+    marginTop: 16,
+    marginBottom: 4,
+    borderRadius: 14,
+    overflow: 'hidden',
+    backgroundColor: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 220,
+  },
+  exerciseImage: {
+    width: '100%',
+    height: 220,
+  },
+  hidden: { opacity: 0 },
+  imagePlaceholder: {
+    height: 220,
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  imageErrorText: { color: '#555', fontSize: 13 },
+  frameIndicator: {
+    flexDirection: 'row',
+    gap: 6,
+    paddingVertical: 8,
+  },
+  frameDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#333',
+  },
+  frameDotActive: {
+    backgroundColor: '#6366f1',
+  },
   section: { marginTop: 24 },
   sectionTitle: {
     color: '#888',
