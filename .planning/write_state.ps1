@@ -1,4 +1,6 @@
-﻿# Project State
+$path = 'C:\Users\cleme\Documents\AI-ClaudeOpus\projets\gym-coach-app\.planning\STATE.md'
+$content = @'
+# Project State
 
 ## Project Reference
 
@@ -67,3 +69,6 @@ Recent decisions affecting current work:
 Last session: 2026-03-01
 Stopped at: Phase 1 code complete, pushed to github.com/Kaitoxic/gym-ai
 Resume: Start Phase 2 planning (Authentication -- Mobile Client)
+'@
+[System.IO.File]::WriteAllText($path, $content, [System.Text.Encoding]::UTF8)
+Write-Host "Written STATE.md"

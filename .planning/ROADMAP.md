@@ -12,7 +12,7 @@ GymCoach AI ships in 9 phases, ordered by a strict dependency chain: the backend
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Backend Foundation + AI Proxy** - Express backend, Supabase project, AI proxy layer, per-user quota enforcement
+- [x] **Phase 1: Backend Foundation + AI Proxy** - Express backend, Supabase project, AI proxy layer, per-user quota enforcement
 - [ ] **Phase 2: Authentication (Mobile Client)** - Login, register, OAuth, persistent session, password reset
 - [ ] **Phase 3: Onboarding + User Profile** - Multi-step onboarding, profile data model, profile storage in cloud
 - [ ] **Phase 4: Exercise Library** - Seeded exercise database, library screens, search/filter, offline cache
@@ -37,10 +37,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 4 plans
 
 Plans:
-- [ ] 01-01: Express app scaffolding, Railway deployment, environment config
-- [ ] 01-02: Supabase project setup — Auth schema, user profiles table, quota tracking table
-- [ ] 01-03: AI proxy layer — provider abstraction, JWT middleware, per-user quota enforcement
-- [ ] 01-04: Exercise library seed endpoint + MMKV offline cache integration
+- [x] 01-01: Express app scaffolding, Railway deployment, environment config
+- [x] 01-02: Supabase project setup — Auth schema, user profiles table, quota tracking table
+- [x] 01-03: AI proxy layer — provider abstraction, JWT middleware, per-user quota enforcement
+- [x] 01-04: Exercise library seed endpoint + MMKV offline cache integration
 
 ### Phase 2: Authentication (Mobile Client)
 **Goal**: Users can create accounts, log in, stay logged in across sessions, and recover access — all required before any user-specific screen can be built
@@ -185,7 +185,7 @@ Phases execute in numeric order. Phase 4 (Exercise Library) can run in parallel 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Backend Foundation + AI Proxy | 0/4 | Not started | - |
+| 1. Backend Foundation + AI Proxy | 4/4 | Complete | 2026-03-01 |
 | 2. Authentication (Mobile Client) | 0/4 | Not started | - |
 | 3. Onboarding + User Profile | 0/6 | Not started | - |
 | 4. Exercise Library | 0/5 | Not started | - |
