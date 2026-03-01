@@ -5,8 +5,7 @@ import HomeNavigator from './HomeNavigator';
 import ExercisesNavigator from './ExercisesNavigator';
 import ProfileNavigator from './ProfileNavigator';
 import StatsScreen from '../screens/StatsScreen';
-import NutritionScreen from '../screens/NutritionScreen';
-import CardioScreen from '../screens/CardioScreen';
+import AIScreen from '../screens/AIScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -15,8 +14,7 @@ function TabIcon({ name, focused }: { name: string; focused: boolean }) {
     HomeTab: '🏠',
     ExercisesTab: '💪',
     StatsTab: '📊',
-    CardioTab: '🏃',
-    NutritionTab: '🥗',
+    AITab: '🤖',
     ProfileTab: '👤',
   };
   return (
@@ -49,8 +47,7 @@ export default function MainTabs() {
         options={{ title: 'Exercices', unmountOnBlur: false }}
       />
       <Tab.Screen name="StatsTab" component={StatsScreen} options={{ title: 'Stats' }} />
-      <Tab.Screen name="CardioTab" component={CardioScreen} options={{ title: 'Cardio' }} />
-      <Tab.Screen name="NutritionTab" component={NutritionScreen} options={{ title: 'Nutrition' }} />
+      <Tab.Screen name="AITab" component={AIScreen} options={{ title: 'Coach IA' }} />
       <Tab.Screen name="ProfileTab" component={ProfileNavigator} options={{ title: 'Profil' }} />
     </Tab.Navigator>
   );

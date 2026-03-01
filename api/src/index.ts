@@ -13,6 +13,7 @@ import programsRouter from './routes/programs';
 import workoutsRouter from './routes/workouts';
 import nutritionRouter from './routes/nutrition';
 import cardioRouter from './routes/cardio';
+import chatRouter from './routes/chat';
 
 const app = express();
 
@@ -35,6 +36,7 @@ app.use('/programs', programsRouter);
 app.use('/workouts', workoutsRouter);
 app.use('/nutrition', nutritionRouter);
 app.use('/cardio', cardioRouter);
+app.use('/chat', chatRouter);
 
 // Global error handler (must be last)
 app.use(errorHandler);

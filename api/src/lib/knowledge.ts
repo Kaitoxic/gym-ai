@@ -1,6 +1,61 @@
 // ─── Course knowledge base for Groq AI context ───────────────────────────────
 // Content authored by Hersovyac / LouisPowerBuild methodology
 
+export const WORKOUT_KNOWLEDGE = `
+COURS MUSCULATION (source : méthodologie Hersovyac/LouisPowerBuild)
+
+PRINCIPES FONDAMENTAUX :
+1. Surcharge progressive : augmenter progressivement le stress mécanique sur les muscles. Clé de toute progression.
+2. Mécano-tension : la tension mécanique est le stimulus principal pour la croissance musculaire. Priorité aux charges lourdes sur les exercices poly-articulaires.
+3. Dommages musculaires + métabolites : secondaires mais utiles en fin de séance pour pump et occlusion.
+
+SPLITS PAR NOMBRE DE JOURS :
+- 2j/semaine : Full Body x2 — chaque muscle 2x/semaine
+- 3j/semaine : Full Body x3 — chaque muscle 3x/semaine
+- 4j/semaine : Upper / Lower x2 — haut du corps / bas du corps alternés
+- 5j/semaine : PPL + Upper/Lower — Poussée/Tirage/Jambes + Upper/Lower
+- 6j/semaine : PPL x2 — cycle Push/Pull/Legs répété deux fois
+
+VOLUME ET FRÉQUENCE :
+- Fréquence optimale : 2 à 3x/semaine par groupe musculaire
+- Volume : 10 à 20 séries travaillées par semaine par muscle (débutant : 10-12, confirmé : 15-20)
+- Intensité : travailler entre 1 et 3 RIR (Reps In Reserve) sur les séries de travail
+- Progresser en charges ou en répétitions à chaque séance (log ton entraînement)
+
+ZONES DE RÉPÉTITIONS :
+- 1-5 reps : force pure (90%+ 1RM) — développement neurologique
+- 6-12 reps : hypertrophie optimale (65-85% 1RM)
+- 12-20 reps : endurance musculaire + hypertrophie métabolique
+- Toutes les zones construisent du muscle si on pousse suffisamment près de l'échec
+
+EXERCICES FONDAMENTAUX (piliers de tout programme) :
+- Bas du corps : Squat, Deadlift, Romanian Deadlift, Hip Thrust, Leg Press, Leg Curl
+- Poussée : Développé couché (barre/haltère), Développé militaire, Dips lestés
+- Tirage : Tractions lestées, Rowing barre, Rowing haltère, Tirage vertical
+- Isolation : Curl biceps, Extensions triceps, Élévations latérales, Leg extension/curl
+
+RÉCUPÉRATION :
+- Muscle : 48-72h de récupération nécessaire après une séance intense
+- Sommeil : 7-9h/nuit — la GH est sécrétée principalement la nuit, essentielle pour la reconstruction
+- Gestion du stress : le cortisol élevé chronique est catabolique — gérer la pression quotidienne
+- Déload : toutes les 4-6 semaines (réduire volume de 40-50% pendant 1 semaine)
+
+BLESSURES & PRÉVENTION :
+- Progresser graduellement, ne pas sauter d'étapes
+- Maîtriser la technique avant d'ajouter des charges
+- Ne pas négliger l'échauffement (15-20 min : cardio léger + mobilisation)
+- Écouter les signaux douloureux : douleur articulaire = stop, courbatures = normal
+- Renforcement des stabilisateurs : coiffe des rotateurs, fessiers, ischio-jambiers
+
+STRUCTURES D'UNE SÉANCE :
+1. Échauffement général (5-10 min cardio léger) + mobilisation spécifique
+2. Exercices poly-articulaires lourds (Squat, Deadlift, Bench, OHP) — début de séance
+3. Exercices accessoires multi-articulaires (Rowing, RDL, Dips, Tractions)
+4. Isolation légère (curl, extension, élévations) — fin de séance
+5. Retour au calme + étirements légers
+`;
+
+
 export const CARDIO_KNOWLEDGE = `
 COURS CARDIO (source : méthodologie Hersovyac/LouisPowerBuild)
 
