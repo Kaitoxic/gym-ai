@@ -22,10 +22,10 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'Workout'>;
 function formatDuration(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = seconds % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
+  return m + ':' + String(s).padStart(2, '0');
 }
 
-function groupByExercise(sets: ActiveSet[]): { slug: string; name: string; sets: ActiveSet[] }[] {
+function groupSets(sets: ActiveSet[]): { slug: string; name: string; sets: ActiveSet[] }[] {
   const map = new Map<string, { slug: string; name: string; sets: ActiveSet[] }>();
   for (const s of sets) {
     if (!map.has(s.exercise_slug)) {
@@ -36,6 +36,7 @@ function groupByExercise(sets: ActiveSet[]): { slug: string; name: string; sets:
   return Array.from(map.values());
 }
 
+// ── Exercise Demo Modal ──────────────────────────────────────────────────────
 function ExerciseDemoModal({
   slug, name, visible, onClose,
 }: {
@@ -94,15 +95,23 @@ function ExerciseDemoModal({
   );
 }
 
-export default function WorkoutScreen({ route, navigation }: Props) {
-  const { workoutId } = route.params;
-  const { activeWorkout, isLoading, startWorkout, updateSet, addSet, removeSet, finishWorkout, cancelWorkout } = useWorkoutStore();
+// ── Main Screen ──────────────────────────────────────────────────────────────
+export default function WorkoutScreen({ navigation }: Props) {
+  const {
+    activeDay,
+    activeSets,
+    saving,
+    finishWorkout,
+    cancelWorkout,
+    toggleSet,
+    updateSetReps,
+    updateSetWeight,
+  } = useWorkoutStore();
+
   const [elapsed, setElapsed] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [demoSlug, setDemoSlug] = useState<string | null>(null);
   const [demoName, setDemoName] = useState('');
-
-  useEffect(() => { startWorkout(workoutId); }, [workoutId]);
 
   useEffect(() => {
     timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
@@ -115,7 +124,16 @@ export default function WorkoutScreen({ route, navigation }: Props) {
   const handleFinish = () => {
     Alert.alert('Terminer la seance ?', 'Votre progression sera sauvegardee.', [
       { text: 'Annuler', style: 'cancel' },
-      { text: 'Terminer', style: 'default', onPress: async () => { await finishWorkout(); navigation.goBack(); } },
+      {
+        text: 'Terminer', style: 'default', onPress: async () => {
+          const log = await finishWorkout();
+          if (log) {
+            navigation.replace('WorkoutAdapt', { logId: log.id });
+          } else {
+            navigation.goBack();
+          }
+        },
+      },
     ]);
   };
 
@@ -126,39 +144,49 @@ export default function WorkoutScreen({ route, navigation }: Props) {
     ]);
   };
 
-  if (isLoading || !activeWorkout) {
+  if (!activeDay || activeSets.length === 0) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.center}>
           <ActivityIndicator size="large" color="#6366f1" />
-          <Text style={styles.loadingText}>Preparation...</Text>
+          <Text style={styles.loadingText}>Preparation de la seance...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  const groups = groupByExercise(activeWorkout.sets);
+  const groups = groupSets(activeSets);
+  const completedCount = activeSets.filter((s) => s.completed).length;
+  const totalCount = activeSets.length;
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <ExerciseDemoModal slug={demoSlug ?? ''} name={demoName} visible={demoSlug !== null} onClose={closeDemo} />
+
+      {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>{activeWorkout.name}</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>{activeDay.name}</Text>
           <Text style={styles.timer}>{formatDuration(elapsed)}</Text>
         </View>
+        <Text style={styles.progress}>{completedCount}/{totalCount}</Text>
         <View style={styles.headerBtns}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel}>
+          <TouchableOpacity style={styles.cancelBtn} onPress={handleCancel} disabled={saving}>
             <Text style={styles.cancelBtnText}>Abandon</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.finishBtn} onPress={handleFinish}>
-            <Text style={styles.finishBtnText}>Terminer</Text>
+          <TouchableOpacity style={styles.finishBtn} onPress={handleFinish} disabled={saving}>
+            {saving
+              ? <ActivityIndicator size="small" color="#fff" />
+              : <Text style={styles.finishBtnText}>Terminer</Text>
+            }
           </TouchableOpacity>
         </View>
       </View>
+
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         {groups.map((group) => (
           <View key={group.slug} style={styles.exerciseCard}>
+            {/* Exercise name row */}
             <View style={styles.exerciseHeader}>
               <Text style={styles.exerciseName}>{group.name}</Text>
               {hasExerciseImages(group.slug) && (
@@ -167,39 +195,44 @@ export default function WorkoutScreen({ route, navigation }: Props) {
                 </TouchableOpacity>
               )}
             </View>
+
+            {/* Column headers */}
             <View style={styles.setHeader}>
-              <Text style={[styles.setCol, styles.setColLabel]}>Serie</Text>
-              <Text style={[styles.setCol, styles.setColLabel]}>Kg</Text>
-              <Text style={[styles.setCol, styles.setColLabel]}>Reps</Text>
-              <Text style={[styles.setCol, styles.setColLabel]}></Text>
+              <Text style={[styles.colSet, styles.colLabel]}>Serie</Text>
+              <Text style={[styles.colKg, styles.colLabel]}>Kg</Text>
+              <Text style={[styles.colReps, styles.colLabel]}>Reps</Text>
+              <Text style={[styles.colDone, styles.colLabel]}></Text>
             </View>
-            {group.sets.map((set, idx) => (
-              <View key={set.id} style={styles.setRow}>
-                <Text style={[styles.setCol, styles.setIndex]}>{idx + 1}</Text>
+
+            {group.sets.map((set) => (
+              <View key={set.exercise_slug + '_' + set.set_index} style={styles.setRow}>
+                <Text style={[styles.colSet, styles.setIndex]}>{set.set_index + 1}</Text>
                 <TextInput
-                  style={[styles.setCol, styles.setInput]}
+                  style={[styles.colKg, styles.setInput]}
                   keyboardType="decimal-pad"
                   value={set.weight_kg !== null ? String(set.weight_kg) : ''}
-                  onChangeText={(v) => updateSet(set.id, { weight_kg: v === '' ? null : parseFloat(v) })}
-                  placeholder="—"
+                  onChangeText={(v) => updateSetWeight(set.exercise_slug, set.set_index, v === '' ? null : parseFloat(v))}
+                  placeholder="-"
                   placeholderTextColor="#555"
                 />
                 <TextInput
-                  style={[styles.setCol, styles.setInput]}
+                  style={[styles.colReps, styles.setInput]}
                   keyboardType="number-pad"
-                  value={set.reps !== null ? String(set.reps) : ''}
-                  onChangeText={(v) => updateSet(set.id, { reps: v === '' ? null : parseInt(v, 10) })}
-                  placeholder="—"
+                  value={set.reps_done > 0 ? String(set.reps_done) : ''}
+                  onChangeText={(v) => updateSetReps(set.exercise_slug, set.set_index, v === '' ? 0 : parseInt(v, 10))}
+                  placeholder={set.target_reps}
                   placeholderTextColor="#555"
                 />
-                <TouchableOpacity style={styles.setCol} onPress={() => removeSet(set.id)}>
-                  <Text style={styles.removeText}>x</Text>
+                <TouchableOpacity
+                  style={[styles.colDone, styles.doneBtn, set.completed && styles.doneBtnActive]}
+                  onPress={() => toggleSet(set.exercise_slug, set.set_index)}
+                >
+                  <Text style={[styles.doneBtnText, set.completed && styles.doneBtnTextActive]}>
+                    {set.completed ? 'OK' : 'o'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             ))}
-            <TouchableOpacity style={styles.addSetBtn} onPress={() => addSet(group.slug, group.name)}>
-              <Text style={styles.addSetText}>+ Ajouter une serie</Text>
-            </TouchableOpacity>
           </View>
         ))}
       </ScrollView>
@@ -207,33 +240,39 @@ export default function WorkoutScreen({ route, navigation }: Props) {
   );
 }
 
+// ── Styles ───────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f0f' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: 12 },
   loadingText: { color: '#888', fontSize: 15 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#1e1e1e' },
-  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  timer: { color: '#6366f1', fontSize: 22, fontWeight: '700', marginTop: 2 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#1e1e1e', gap: 8 },
+  headerTitle: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  timer: { color: '#6366f1', fontSize: 20, fontWeight: '700', marginTop: 1 },
+  progress: { color: '#888', fontSize: 13, fontWeight: '600', marginRight: 4 },
   headerBtns: { flexDirection: 'row', gap: 8 },
-  cancelBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, borderWidth: 1, borderColor: '#333' },
-  cancelBtnText: { color: '#888', fontSize: 13, fontWeight: '600' },
-  finishBtn: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: '#6366f1' },
-  finishBtnText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+  cancelBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, borderWidth: 1, borderColor: '#333' },
+  cancelBtnText: { color: '#888', fontSize: 12, fontWeight: '600' },
+  finishBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 8, backgroundColor: '#6366f1', minWidth: 72, alignItems: 'center' },
+  finishBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
   scroll: { padding: 16, paddingBottom: 40 },
-  exerciseCard: { backgroundColor: '#1a1a1a', borderRadius: 14, padding: 14, marginBottom: 16, borderWidth: 1, borderColor: '#2a2a2a' },
+  exerciseCard: { backgroundColor: '#1a1a1a', borderRadius: 14, padding: 14, marginBottom: 14, borderWidth: 1, borderColor: '#2a2a2a' },
   exerciseHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   exerciseName: { color: '#fff', fontSize: 15, fontWeight: '700', flex: 1 },
   voirBtn: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 6, backgroundColor: '#6366f122', borderWidth: 1, borderColor: '#6366f1', marginLeft: 8 },
   voirBtnText: { color: '#6366f1', fontSize: 12, fontWeight: '700' },
-  setHeader: { flexDirection: 'row', marginBottom: 6 },
-  setCol: { flex: 1, textAlign: 'center' },
-  setColLabel: { color: '#555', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
+  setHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 4 },
+  colSet: { width: 36, textAlign: 'center' },
+  colKg: { flex: 1, textAlign: 'center', marginHorizontal: 4 },
+  colReps: { flex: 1, textAlign: 'center', marginHorizontal: 4 },
+  colDone: { width: 44, alignItems: 'center' },
+  colLabel: { color: '#555', fontSize: 11, fontWeight: '600', textTransform: 'uppercase' },
   setRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
-  setIndex: { color: '#666', fontSize: 14 },
-  setInput: { color: '#fff', fontSize: 15, backgroundColor: '#111', borderRadius: 6, borderWidth: 1, borderColor: '#333', paddingVertical: 6, marginHorizontal: 4, textAlign: 'center' },
-  removeText: { color: '#ef4444', fontSize: 15, textAlign: 'center' },
-  addSetBtn: { marginTop: 6, alignItems: 'center', paddingVertical: 8 },
-  addSetText: { color: '#6366f1', fontSize: 13, fontWeight: '600' },
+  setIndex: { color: '#666', fontSize: 14, fontWeight: '600' },
+  setInput: { color: '#fff', fontSize: 15, backgroundColor: '#111', borderRadius: 6, borderWidth: 1, borderColor: '#333', paddingVertical: 5, textAlign: 'center' },
+  doneBtn: { width: 36, height: 36, borderRadius: 18, borderWidth: 2, borderColor: '#333', justifyContent: 'center', alignItems: 'center' },
+  doneBtnActive: { borderColor: '#22c55e', backgroundColor: '#22c55e22' },
+  doneBtnText: { color: '#555', fontSize: 12, fontWeight: '700' },
+  doneBtnTextActive: { color: '#22c55e' },
 });
 
 const modalStyles = StyleSheet.create({
