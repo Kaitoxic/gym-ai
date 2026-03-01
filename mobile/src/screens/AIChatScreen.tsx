@@ -211,6 +211,7 @@ export default function AIChatScreen() {
             multiline
             returnKeyType="send"
             onSubmitEditing={() => sendQuestion()}
+            color="#fff"
           />
           <TouchableOpacity
             style={[styles.sendBtn, (!input.trim() || asking) && styles.sendBtnDisabled]}

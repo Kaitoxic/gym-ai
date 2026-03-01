@@ -298,6 +298,7 @@ export default function NutritionScreen() {
             multiline
             returnKeyType="send"
             onSubmitEditing={sendQuestion}
+            color="#fff"
           />
           <TouchableOpacity
             style={[styles.sendBtn, (!input.trim() || asking) && styles.sendBtnDisabled]}
