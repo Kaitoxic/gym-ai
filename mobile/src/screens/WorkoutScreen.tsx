@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeNavigator';
 import { useWorkoutStore, type ActiveSet } from '../store/workoutStore';
-import { getExerciseImageUrl, hasExerciseImages } from '../lib/exerciseImages';
+import { getExerciseGifUrl, hasExerciseImages } from '../lib/exerciseImages';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Workout'>;
 
@@ -42,20 +42,13 @@ function ExerciseDemoModal({
 }: {
   slug: string; name: string; visible: boolean; onClose: () => void;
 }) {
-  const [frame, setFrame] = useState<0 | 1>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const url0 = getExerciseImageUrl(slug, 0);
-  const url1 = getExerciseImageUrl(slug, 1);
-  const currentUrl = frame === 0 ? url0 : url1;
+  const gifUrl = getExerciseGifUrl(slug);
 
   useEffect(() => {
-    if (!visible) { if (intervalRef.current) clearInterval(intervalRef.current); return; }
-    setFrame(0); setLoading(true); setError(false);
-    intervalRef.current = setInterval(() => { setFrame((f) => (f === 0 ? 1 : 0)); }, 1200);
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+    if (visible) { setLoading(true); setError(false); }
   }, [visible, slug]);
 
   return (
@@ -70,20 +63,17 @@ function ExerciseDemoModal({
             {error && (
               <View style={modalStyles.placeholder}><Text style={modalStyles.errorText}>Image non disponible</Text></View>
             )}
-            {!error && currentUrl && (
+            {gifUrl && !error && (
               <Image
-                source={{ uri: currentUrl }}
+                source={{ uri: gifUrl }}
                 style={[modalStyles.image, loading && { opacity: 0 }]}
                 resizeMode="contain"
                 onLoad={() => setLoading(false)}
                 onError={() => { setLoading(false); setError(true); }}
               />
             )}
-            {!loading && !error && (
-              <View style={modalStyles.dots}>
-                <View style={[modalStyles.dot, frame === 0 && modalStyles.dotActive]} />
-                <View style={[modalStyles.dot, frame === 1 && modalStyles.dotActive]} />
-              </View>
+            {!gifUrl && (
+              <View style={modalStyles.placeholder}><Text style={modalStyles.errorText}>Image non disponible</Text></View>
             )}
           </View>
           <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose}>
@@ -283,9 +273,6 @@ const modalStyles = StyleSheet.create({
   image: { width: '100%', height: 220 },
   placeholder: { height: 220, width: '100%', alignItems: 'center', justifyContent: 'center' },
   errorText: { color: '#555', fontSize: 13 },
-  dots: { flexDirection: 'row', gap: 6, paddingVertical: 8 },
-  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#333' },
-  dotActive: { backgroundColor: '#6366f1' },
   closeBtn: { backgroundColor: '#6366f1', borderRadius: 10, paddingHorizontal: 32, paddingVertical: 10, marginTop: 4 },
   closeBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });

@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useRef, useState } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ExercisesStackParamList } from '../../navigation/ExercisesNavigator';
-import { getExerciseImageUrl, hasExerciseImages } from '../../lib/exerciseImages';
+import { getExerciseGifUrl, hasExerciseImages } from '../../lib/exerciseImages';
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, 'ExerciseDetail'>;
 
@@ -32,30 +32,12 @@ function Tag({ label, color }: { label: string; color: string }) {
   );
 }
 
-function ExerciseImageSlideshow({ slug }: { slug: string }) {
-  const [frame, setFrame] = useState<0 | 1>(0);
+function ExerciseGif({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const url0 = getExerciseImageUrl(slug, 0);
-  const url1 = getExerciseImageUrl(slug, 1);
-  const currentUrl = frame === 0 ? url0 : url1;
-
-  useEffect(() => {
-    if (!url0) return;
-    setFrame(0);
-    setLoading(true);
-    setError(false);
-    intervalRef.current = setInterval(() => {
-      setFrame((f) => (f === 0 ? 1 : 0));
-    }, 1200);
-    return () => {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-  }, [slug]);
-
-  if (!url0) return null;
+  const gifUrl = getExerciseGifUrl(slug);
+  if (!gifUrl) return null;
 
   return (
     <View style={styles.imageContainer}>
@@ -69,20 +51,14 @@ function ExerciseImageSlideshow({ slug }: { slug: string }) {
           <Text style={styles.imageErrorText}>Image non disponible</Text>
         </View>
       )}
-      {!error && currentUrl && (
+      {!error && (
         <Image
-          source={{ uri: currentUrl }}
+          source={{ uri: gifUrl }}
           style={[styles.exerciseImage, loading && styles.hidden]}
           resizeMode="contain"
           onLoad={() => setLoading(false)}
           onError={() => { setLoading(false); setError(true); }}
         />
-      )}
-      {!loading && !error && (
-        <View style={styles.frameIndicator}>
-          <View style={[styles.frameDot, frame === 0 && styles.frameDotActive]} />
-          <View style={[styles.frameDot, frame === 1 && styles.frameDotActive]} />
-        </View>
       )}
     </View>
   );
@@ -103,7 +79,7 @@ export default function ExerciseDetailScreen({ route }: Props) {
           <Tag label={capitalize(exercise.difficulty)} color={diffColor} />
         </View>
 
-        {showImages && <ExerciseImageSlideshow slug={exercise.slug} />}
+        {showImages && <ExerciseGif slug={exercise.slug} />}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Muscle Groups</Text>
@@ -169,20 +145,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   imageErrorText: { color: '#555', fontSize: 13 },
-  frameIndicator: {
-    flexDirection: 'row',
-    gap: 6,
-    paddingVertical: 8,
-  },
-  frameDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#333',
-  },
-  frameDotActive: {
-    backgroundColor: '#6366f1',
-  },
   section: { marginTop: 24 },
   sectionTitle: {
     color: '#888',
