@@ -160,26 +160,150 @@ function ExercisePickerModal({ visible, onClose, onSelect, currentExercise }: Pi
   );
 }
 
+// ─── Sets/Reps Edit Modal ─────────────────────────────────────────────────────
+
+interface SetsRepsModalProps {
+  visible: boolean;
+  exercise: ProgramExercise | null;
+  onClose: () => void;
+  onConfirm: (sets: number, reps: string, rest: number) => void;
+}
+
+function SetsRepsModal({ visible, exercise, onClose, onConfirm }: SetsRepsModalProps) {
+  const [sets, setSets] = useState('');
+  const [reps, setReps] = useState('');
+  const [rest, setRest] = useState('');
+
+  useEffect(() => {
+    if (visible && exercise) {
+      setSets(String(exercise.sets));
+      setReps(exercise.reps);
+      setRest(String(exercise.rest_seconds));
+    }
+  }, [visible, exercise]);
+
+  const handleConfirm = () => {
+    const parsedSets = parseInt(sets, 10);
+    const parsedRest = parseInt(rest, 10);
+    if (!reps.trim() || isNaN(parsedSets) || parsedSets < 1 || isNaN(parsedRest) || parsedRest < 0) {
+      Alert.alert('Valeurs invalides', 'Verifie les series, repetitions et repos.');
+      return;
+    }
+    onConfirm(parsedSets, reps.trim(), parsedRest);
+  };
+
+  return (
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
+      <View style={srStyles.overlay}>
+        <View style={srStyles.box}>
+          <Text style={srStyles.title}>Modifier {exercise?.name}</Text>
+
+          <View style={srStyles.row}>
+            <View style={srStyles.field}>
+              <Text style={srStyles.label}>Series</Text>
+              <TextInput
+                style={srStyles.input}
+                value={sets}
+                onChangeText={setSets}
+                keyboardType="number-pad"
+                selectTextOnFocus
+              />
+            </View>
+            <View style={srStyles.field}>
+              <Text style={srStyles.label}>Reps</Text>
+              <TextInput
+                style={srStyles.input}
+                value={reps}
+                onChangeText={setReps}
+                placeholder="ex: 8-12"
+                placeholderTextColor="#555"
+                selectTextOnFocus
+                autoCorrect={false}
+              />
+            </View>
+            <View style={srStyles.field}>
+              <Text style={srStyles.label}>Repos (s)</Text>
+              <TextInput
+                style={srStyles.input}
+                value={rest}
+                onChangeText={setRest}
+                keyboardType="number-pad"
+                selectTextOnFocus
+              />
+            </View>
+          </View>
+
+          <View style={srStyles.btnRow}>
+            <TouchableOpacity style={srStyles.cancelBtn} onPress={onClose}>
+              <Text style={srStyles.cancelText}>Annuler</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={srStyles.confirmBtn} onPress={handleConfirm}>
+              <Text style={srStyles.confirmText}>OK</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
 // ─── Exercise Row ─────────────────────────────────────────────────────────────
 
 interface ExerciseRowProps {
   ex: ProgramExercise;
   editMode: boolean;
+  isFirst: boolean;
+  isLast: boolean;
   onSwap: () => void;
+  onEditSetsReps: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
 }
 
-function ExerciseRow({ ex, editMode, onSwap }: ExerciseRowProps) {
+function ExerciseRow({ ex, editMode, isFirst, isLast, onSwap, onEditSetsReps, onMoveUp, onMoveDown }: ExerciseRowProps) {
   return (
     <View style={styles.exRow}>
+      {/* Reorder arrows */}
+      {editMode && (
+        <View style={styles.reorderCol}>
+          <TouchableOpacity
+            style={[styles.arrowBtn, isFirst && styles.arrowBtnDisabled]}
+            onPress={onMoveUp}
+            disabled={isFirst}
+            activeOpacity={0.6}
+          >
+            <Text style={[styles.arrowText, isFirst && styles.arrowTextDisabled]}>▲</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.arrowBtn, isLast && styles.arrowBtnDisabled]}
+            onPress={onMoveDown}
+            disabled={isLast}
+            activeOpacity={0.6}
+          >
+            <Text style={[styles.arrowText, isLast && styles.arrowTextDisabled]}>▼</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <View style={styles.exInfo}>
         <Text style={styles.exName}>{ex.name}</Text>
         {ex.notes ? <Text style={styles.exNotes}>{ex.notes}</Text> : null}
       </View>
+
       <View style={styles.exRight}>
-        <View style={styles.exStats}>
-          <Text style={styles.exSets}>{ex.sets} x {ex.reps}</Text>
+        {/* Sets/reps — tappable in edit mode */}
+        <TouchableOpacity
+          style={styles.exStats}
+          onPress={editMode ? onEditSetsReps : undefined}
+          activeOpacity={editMode ? 0.6 : 1}
+        >
+          <Text style={[styles.exSets, editMode && styles.exSetsEditable]}>
+            {ex.sets} x {ex.reps}
+          </Text>
           <Text style={styles.exRest}>{ex.rest_seconds}s rest</Text>
-        </View>
+          {editMode && <Text style={styles.tapHint}>Modifier</Text>}
+        </TouchableOpacity>
+
         {editMode && (
           <TouchableOpacity style={styles.swapBtn} onPress={onSwap} activeOpacity={0.7}>
             <Text style={styles.swapBtnText}>Changer</Text>
@@ -198,9 +322,11 @@ interface DayCardProps {
   programId: string;
   editMode: boolean;
   onRequestSwap: (dayIndex: number, exerciseIndex: number, currentExercise: ProgramExercise) => void;
+  onRequestEditSetsReps: (dayIndex: number, exerciseIndex: number, currentExercise: ProgramExercise) => void;
+  onRequestReorder: (dayIndex: number, exerciseIndex: number, direction: 'up' | 'down') => void;
 }
 
-function DayCard({ day, dayIndex, programId, editMode, onRequestSwap }: DayCardProps) {
+function DayCard({ day, dayIndex, programId, editMode, onRequestSwap, onRequestEditSetsReps, onRequestReorder }: DayCardProps) {
   const navigation = useNavigation<Nav>();
   const { startWorkout } = useWorkoutStore();
 
@@ -230,7 +356,12 @@ function DayCard({ day, dayIndex, programId, editMode, onRequestSwap }: DayCardP
           key={i}
           ex={ex}
           editMode={editMode}
+          isFirst={i === 0}
+          isLast={i === (day.exercises ?? []).length - 1}
           onSwap={() => onRequestSwap(dayIndex, i, ex)}
+          onEditSetsReps={() => onRequestEditSetsReps(dayIndex, i, ex)}
+          onMoveUp={() => onRequestReorder(dayIndex, i, 'up')}
+          onMoveDown={() => onRequestReorder(dayIndex, i, 'down')}
         />
       ))}
     </View>
@@ -241,7 +372,7 @@ function DayCard({ day, dayIndex, programId, editMode, onRequestSwap }: DayCardP
 
 export default function ProgramDetailScreen({ route }: Props) {
   const { programId } = route.params;
-  const { fetchProgramById, updateProgramExercise } = useProgramStore();
+  const { fetchProgramById, updateProgramExercise, updateProgramSchedule } = useProgramStore();
   const [program, setProgram] = useState<Program | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -250,9 +381,17 @@ export default function ProgramDetailScreen({ route }: Props) {
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Picker state
+  // Swap picker state
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerTarget, setPickerTarget] = useState<{
+    dayIndex: number;
+    exerciseIndex: number;
+    currentExercise: ProgramExercise;
+  } | null>(null);
+
+  // Sets/reps edit modal state
+  const [srVisible, setSrVisible] = useState(false);
+  const [srTarget, setSrTarget] = useState<{
     dayIndex: number;
     exerciseIndex: number;
     currentExercise: ProgramExercise;
@@ -270,6 +409,7 @@ export default function ProgramDetailScreen({ route }: Props) {
     })();
   }, [programId]);
 
+  // ── Swap ──────────────────────────────────────────────────────────────────
   const handleRequestSwap = useCallback((dayIndex: number, exerciseIndex: number, currentExercise: ProgramExercise) => {
     setPickerTarget({ dayIndex, exerciseIndex, currentExercise });
     setPickerVisible(true);
@@ -300,6 +440,74 @@ export default function ProgramDetailScreen({ route }: Props) {
     setPickerVisible(false);
     setPickerTarget(null);
   }, []);
+
+  // ── Sets/Reps edit ────────────────────────────────────────────────────────
+  const handleRequestEditSetsReps = useCallback((dayIndex: number, exerciseIndex: number, currentExercise: ProgramExercise) => {
+    setSrTarget({ dayIndex, exerciseIndex, currentExercise });
+    setSrVisible(true);
+  }, []);
+
+  const handleSrConfirm = useCallback(async (sets: number, reps: string, rest: number) => {
+    if (!srTarget || !program) return;
+    setSrVisible(false);
+    setSaving(true);
+
+    const newExercise: ProgramExercise = {
+      ...srTarget.currentExercise,
+      sets,
+      reps,
+      rest_seconds: rest,
+    };
+
+    const updated = await updateProgramExercise(
+      program.id,
+      srTarget.dayIndex,
+      srTarget.exerciseIndex,
+      newExercise
+    );
+
+    if (updated) {
+      setProgram(updated);
+    } else {
+      Alert.alert('Erreur', 'La modification n\'a pas pu etre sauvegardee.');
+    }
+    setSaving(false);
+    setSrTarget(null);
+  }, [srTarget, program, updateProgramExercise]);
+
+  const handleSrClose = useCallback(() => {
+    setSrVisible(false);
+    setSrTarget(null);
+  }, []);
+
+  // ── Reorder ───────────────────────────────────────────────────────────────
+  const handleReorder = useCallback(async (dayIndex: number, exerciseIndex: number, direction: 'up' | 'down') => {
+    if (!program) return;
+
+    const newSchedule: ProgramDay[] = program.schedule.map((day, di) => {
+      if (di !== dayIndex) return day;
+      const exs = [...day.exercises];
+      const targetIndex = direction === 'up' ? exerciseIndex - 1 : exerciseIndex + 1;
+      if (targetIndex < 0 || targetIndex >= exs.length) return day;
+      // Swap
+      [exs[exerciseIndex], exs[targetIndex]] = [exs[targetIndex], exs[exerciseIndex]];
+      return { ...day, exercises: exs };
+    });
+
+    // Optimistic update
+    setProgram({ ...program, schedule: newSchedule });
+    setSaving(true);
+
+    const updated = await updateProgramSchedule(program.id, newSchedule);
+    if (updated) {
+      setProgram(updated);
+    } else {
+      // Rollback
+      setProgram(program);
+      Alert.alert('Erreur', 'La modification n\'a pas pu etre sauvegardee.');
+    }
+    setSaving(false);
+  }, [program, updateProgramSchedule]);
 
   if (loading) {
     return (
@@ -332,6 +540,13 @@ export default function ProgramDetailScreen({ route }: Props) {
           currentExercise={pickerTarget.currentExercise}
         />
       )}
+
+      <SetsRepsModal
+        visible={srVisible}
+        exercise={srTarget?.currentExercise ?? null}
+        onClose={handleSrClose}
+        onConfirm={handleSrConfirm}
+      />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Header */}
@@ -371,7 +586,9 @@ export default function ProgramDetailScreen({ route }: Props) {
         {/* Edit mode banner */}
         {editMode && (
           <View style={styles.editBanner}>
-            <Text style={styles.editBannerText}>Mode edition — appuyez sur "Changer" pour remplacer un exercice</Text>
+            <Text style={styles.editBannerText}>
+              Mode edition — Changer: remplacer · Modifier: series/reps · ▲▼: reordonner
+            </Text>
           </View>
         )}
 
@@ -385,6 +602,8 @@ export default function ProgramDetailScreen({ route }: Props) {
             programId={program.id}
             editMode={editMode}
             onRequestSwap={handleRequestSwap}
+            onRequestEditSetsReps={handleRequestEditSetsReps}
+            onRequestReorder={handleReorder}
           />
         ))}
       </ScrollView>
@@ -442,7 +661,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 16,
   },
-  editBannerText: { color: '#a78bfa', fontSize: 13, textAlign: 'center' },
+  editBannerText: { color: '#a78bfa', fontSize: 12, textAlign: 'center' },
   sectionTitle: { color: '#888', fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
   dayCard: {
     backgroundColor: '#1a1a1a',
@@ -472,19 +691,26 @@ const styles = StyleSheet.create({
   startBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   exRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: '#2a2a2a',
+    gap: 6,
   },
-  exInfo: { flex: 1, marginRight: 10 },
+  reorderCol: { flexDirection: 'column', alignItems: 'center', gap: 2 },
+  arrowBtn: { padding: 4 },
+  arrowBtnDisabled: { opacity: 0.2 },
+  arrowText: { color: '#6366f1', fontSize: 13, fontWeight: '700' },
+  arrowTextDisabled: { color: '#555' },
+  exInfo: { flex: 1, marginRight: 8 },
   exName: { color: '#e5e7eb', fontSize: 14, fontWeight: '500' },
   exNotes: { color: '#6b7280', fontSize: 12, marginTop: 2 },
-  exRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  exRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   exStats: { alignItems: 'flex-end' },
   exSets: { color: '#a78bfa', fontSize: 13, fontWeight: '600' },
+  exSetsEditable: { color: '#818cf8', textDecorationLine: 'underline' },
   exRest: { color: '#555', fontSize: 11, marginTop: 2 },
+  tapHint: { color: '#6366f1', fontSize: 9, marginTop: 2, fontWeight: '600' },
   swapBtn: {
     backgroundColor: '#6366f122',
     borderWidth: 1,
@@ -565,4 +791,55 @@ const pickerStyles = StyleSheet.create({
     alignItems: 'center',
   },
   backBtnText: { color: '#888', fontSize: 14 },
+});
+
+const srStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  box: {
+    backgroundColor: '#1a1a1a',
+    borderRadius: 14,
+    padding: 20,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+  },
+  title: { color: '#fff', fontSize: 15, fontWeight: '700', marginBottom: 16, textAlign: 'center' },
+  row: { flexDirection: 'row', gap: 12, marginBottom: 20 },
+  field: { flex: 1 },
+  label: { color: '#888', fontSize: 11, fontWeight: '600', textTransform: 'uppercase', marginBottom: 6 },
+  input: {
+    backgroundColor: '#0f0f0f',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    color: '#fff',
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  btnRow: { flexDirection: 'row', gap: 12 },
+  cancelBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#3a3a3a',
+    alignItems: 'center',
+  },
+  cancelText: { color: '#888', fontSize: 14, fontWeight: '600' },
+  confirmBtn: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 10,
+    backgroundColor: '#6366f1',
+    alignItems: 'center',
+  },
+  confirmText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });

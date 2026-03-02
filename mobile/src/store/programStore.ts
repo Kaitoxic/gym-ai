@@ -43,6 +43,10 @@ interface ProgramState {
     exerciseIndex: number,
     newExercise: ProgramExercise
   ) => Promise<Program | null>;
+  updateProgramSchedule: (
+    programId: string,
+    newSchedule: ProgramDay[]
+  ) => Promise<Program | null>;
 }
 
 export const useProgramStore = create<ProgramState>((set, get) => ({
@@ -121,6 +125,20 @@ export const useProgramStore = create<ProgramState>((set, get) => ({
         programs: state.programs.map((p) => p.id === programId ? updated : p),
       }));
 
+      return updated;
+    } catch (err: any) {
+      set({ error: err.message ?? 'Update failed' });
+      return null;
+    }
+  },
+
+  updateProgramSchedule: async (programId, newSchedule) => {
+    try {
+      const patchRes = await apiClient.patch<{ data: Program }>(`/programs/${programId}`, { schedule: newSchedule });
+      const updated = patchRes.data.data;
+      set((state) => ({
+        programs: state.programs.map((p) => p.id === programId ? updated : p),
+      }));
       return updated;
     } catch (err: any) {
       set({ error: err.message ?? 'Update failed' });
