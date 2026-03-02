@@ -133,9 +133,46 @@ router.get('/:id', requireAuth, async (req: Request, res: Response) => {
   }
 });
 
+// ─── POST /programs — manual creation (free + pro) ───────────────
+router.post('/', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { name, weeks, days_per_week, schedule, notes } = req.body;
+    if (!name?.trim()) return res.status(400).json({ error: 'name is required' });
+    if (!Array.isArray(schedule) || schedule.length === 0) {
+      return res.status(400).json({ error: 'schedule must be a non-empty array' });
+    }
+
+    const { data, error } = await supabase
+      .from('programs')
+      .insert({
+        user_id: req.user!.id,
+        name: name.trim(),
+        weeks: weeks ?? 4,
+        days_per_week: days_per_week ?? schedule.length,
+        schedule,
+        notes: notes ?? null,
+      })
+      .select()
+      .single();
+
+    if (error) return res.status(500).json({ error: 'Database error', detail: error.message });
+    return res.status(201).json({ data });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Unexpected error', detail: err.message });
+  }
+});
+
 // ─── POST /programs/generate ─────────────────────────────────────
 router.post('/generate', requireAuth, checkQuota, async (req: Request, res: Response) => {
   try {
+    // 0. Pro gate — AI generation is a Pro feature
+    if (req.user!.subscription_status !== 'pro') {
+      return res.status(403).json({
+        error: 'pro_required',
+        message: 'La génération IA de programme est une fonctionnalité Pro.',
+      });
+    }
+
     // 1. Fetch user profile
     const { data: profile, error: profileError } = await supabase
       .from('users')

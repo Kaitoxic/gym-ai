@@ -14,12 +14,18 @@ import workoutsRouter from './routes/workouts';
 import nutritionRouter from './routes/nutrition';
 import cardioRouter from './routes/cardio';
 import chatRouter from './routes/chat';
+import subscriptionsRouter from './routes/subscriptions';
 
 const app = express();
 
-// Security + body parsing
+// Security
 app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN ?? '*' }));
+
+// Stripe webhook needs raw body — register BEFORE express.json()
+app.use('/subscriptions/webhook', express.raw({ type: 'application/json' }));
+
+// Body parsing for all other routes
 app.use(express.json());
 
 // Health checks
@@ -37,6 +43,7 @@ app.use('/workouts', workoutsRouter);
 app.use('/nutrition', nutritionRouter);
 app.use('/cardio', cardioRouter);
 app.use('/chat', chatRouter);
+app.use('/subscriptions', subscriptionsRouter);
 
 // Global error handler (must be last)
 app.use(errorHandler);

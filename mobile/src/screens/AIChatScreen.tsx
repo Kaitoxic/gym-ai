@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAISettingsStore } from '../store/aiSettingsStore';
 import { apiClient } from '../lib/apiClient';
 import { AIStackParamList } from '../navigation/AINavigator';
+import { useSubscriptionStore } from '../store/subscriptionStore';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,15 +56,20 @@ export default function AIChatScreen() {
   const route = useRoute<RouteProp<AIStackParamList, 'AIChatScreen'>>();
   const { conversationId, title } = route.params;
   const { coaching_style, detail_level } = useAISettingsStore();
+  const { status: subStatus } = useSubscriptionStore();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [asking, setAsking] = useState(false);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [conversationTitle, setConversationTitle] = useState(title);
+  const [dailyCount, setDailyCount] = useState(0);
   const [kbOffset, setKbOffset] = useState(0);
   const insets = useSafeAreaInsets();
   const scrollRef = useRef<ScrollView>(null);
+
+  const isPro = subStatus === 'pro';
+  const FREE_LIMIT = 3;
 
   // Set navigation header title
   useLayoutEffect(() => {
@@ -131,17 +137,25 @@ export default function AIChatScreen() {
       });
       const aiMsg: ChatMessage = { role: 'ai', text: res.data.answer };
       setMessages((prev) => [...prev, aiMsg]);
+      if (!isPro) setDailyCount((c) => c + 1);
 
       // Update title if it was default
       if (conversationTitle === 'Nouvelle conversation') {
         const newTitle = text.slice(0, 50) + (text.length > 50 ? '…' : '');
         setConversationTitle(newTitle);
       }
-    } catch {
+    } catch (err: any) {
+      const isLimit = err?.response?.data?.error === 'daily_limit_reached';
       setMessages((prev) => [
         ...prev,
-        { role: 'ai', text: "Désolé, impossible de répondre pour l'instant." },
+        {
+          role: 'ai',
+          text: isLimit
+            ? "Tu as atteint la limite de 3 messages/jour (plan gratuit). Passe à Pro pour un accès illimité."
+            : "Désolé, impossible de répondre pour l'instant.",
+        },
       ]);
+      if (isLimit) setDailyCount(FREE_LIMIT);
     } finally {
       setAsking(false);
       setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
@@ -150,6 +164,17 @@ export default function AIChatScreen() {
 
   const chatContent = (
     <>
+      {/* Free tier banner */}
+      {!isPro && (
+        <View style={styles.freeBanner}>
+          <Text style={styles.freeBannerText}>
+            Plan gratuit — {Math.max(0, FREE_LIMIT - dailyCount)}/{FREE_LIMIT} messages restants aujourd'hui
+          </Text>
+          <TouchableOpacity onPress={() => navigation.getParent()?.navigate('HomeTab', { screen: 'Paywall' })}>
+            <Text style={styles.freeBannerCta}>Passer Pro</Text>
+          </TouchableOpacity>
+        </View>
+      )}
       <ScrollView
         ref={scrollRef}
         contentContainerStyle={[styles.scroll, Platform.OS === 'android' && { paddingBottom: kbOffset + 20 }]}
@@ -260,6 +285,19 @@ export default function AIChatScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0f0f0f' },
   scroll: { padding: 16, paddingBottom: 20 },
+
+  freeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#1a1a1a',
+    borderBottomWidth: 1,
+    borderBottomColor: '#2a2a2a',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  freeBannerText: { color: '#666', fontSize: 12 },
+  freeBannerCta: { color: '#a78bfa', fontSize: 12, fontWeight: '700' },
 
   emptyState: { marginBottom: 16, marginTop: 8 },
   emptyText: { color: '#555', fontSize: 13, lineHeight: 20, marginBottom: 16 },

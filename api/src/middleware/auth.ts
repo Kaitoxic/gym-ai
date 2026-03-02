@@ -3,8 +3,7 @@ import { supabase } from '../lib/supabase';
 
 /**
  * Verifies the Supabase JWT by calling supabase.auth.getUser(token).
- * This works with both legacy HS256 secrets AND the new RS256 signing keys,
- * because Supabase handles the verification on their side.
+ * Also reads subscription_status from user_metadata (set by Stripe webhook).
  */
 export const requireAuth: RequestHandler = async (req, res, next) => {
   const header = req.headers.authorization;
@@ -19,7 +18,8 @@ export const requireAuth: RequestHandler = async (req, res, next) => {
       res.status(401).json({ error: 'Invalid token' });
       return;
     }
-    req.user = { id: user.id, email: user.email ?? '' };
+    const status = (user.user_metadata?.subscription_status as 'free' | 'pro') ?? 'free';
+    req.user = { id: user.id, email: user.email ?? '', subscription_status: status };
     next();
   } catch {
     res.status(401).json({ error: 'Invalid token' });

@@ -14,6 +14,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeNavigator';
 import { useProfileStore } from '../store/profileStore';
 import { useProgramStore, type Program } from '../store/programStore';
+import { useSubscriptionStore } from '../store/subscriptionStore';
 
 type Nav = NativeStackNavigationProp<HomeStackParamList, 'Home'>;
 
@@ -51,12 +52,22 @@ export default function HomeScreen() {
   const { profile } = useProfileStore();
   const { programs, generating, loading, error, fetchPrograms, generateProgram, deleteProgram } =
     useProgramStore();
+  const { status: subStatus, fetchStatus } = useSubscriptionStore();
 
   useEffect(() => {
     fetchPrograms();
+    fetchStatus();
   }, []);
 
   const handleGenerate = async () => {
+    if (subStatus === 'loading') return;
+
+    // Pro gate
+    if (subStatus !== 'pro') {
+      navigation.navigate('Paywall');
+      return;
+    }
+
     if (!profile?.onboarding_done) {
       Alert.alert('Profile incomplete', 'Please complete onboarding first.');
       return;
@@ -75,6 +86,8 @@ export default function HomeScreen() {
       { text: 'Delete', style: 'destructive', onPress: () => deleteProgram(program.id) },
     ]);
   };
+
+  const isPro = subStatus === 'pro';
 
   return (
     <SafeAreaView style={styles.container}>
@@ -96,25 +109,43 @@ export default function HomeScreen() {
               )}
             </View>
 
-            {/* Generate button */}
+            {/* Generate AI button (Pro) */}
             <TouchableOpacity
-              style={[styles.generateBtn, generating && styles.generateBtnDisabled]}
+              style={[styles.generateBtn, (generating || subStatus === 'loading') && styles.generateBtnDisabled]}
               onPress={handleGenerate}
-              disabled={generating}
+              disabled={generating || subStatus === 'loading'}
               activeOpacity={0.8}
             >
               {generating ? (
                 <>
                   <ActivityIndicator color="#fff" size="small" style={{ marginRight: 8 }} />
-                  <Text style={styles.generateBtnText}>Generating your program...</Text>
+                  <Text style={styles.generateBtnText}>Génération en cours...</Text>
                 </>
               ) : (
-                <Text style={styles.generateBtnText}>Generate AI Program</Text>
+                <View style={styles.generateBtnInner}>
+                  <Text style={styles.generateBtnText}>
+                    {isPro ? 'Générer un programme IA' : 'Générer un programme IA'}
+                  </Text>
+                  {!isPro && (
+                    <View style={styles.proBadge}>
+                      <Text style={styles.proBadgeText}>PRO</Text>
+                    </View>
+                  )}
+                </View>
               )}
             </TouchableOpacity>
 
+            {/* Manual creation button (free) */}
+            <TouchableOpacity
+              style={styles.manualBtn}
+              onPress={() => navigation.navigate('CreateProgram')}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.manualBtnText}>+ Créer manuellement</Text>
+            </TouchableOpacity>
+
             {programs.length > 0 && (
-              <Text style={styles.sectionTitle}>My Programs</Text>
+              <Text style={styles.sectionTitle}>Mes programmes</Text>
             )}
           </>
         }
@@ -128,9 +159,9 @@ export default function HomeScreen() {
         ListEmptyComponent={
           !loading && !generating ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>No programs yet</Text>
+              <Text style={styles.emptyTitle}>Aucun programme</Text>
               <Text style={styles.emptyText}>
-                Tap "Generate AI Program" to create your first personalized workout plan.
+                Génère un programme IA (Pro) ou crée-en un manuellement.
               </Text>
             </View>
           ) : null
@@ -152,13 +183,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#6366f1',
     borderRadius: 14,
     paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 28,
+    marginBottom: 10,
   },
   generateBtnDisabled: { backgroundColor: '#4338ca', opacity: 0.7 },
+  generateBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   generateBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
+  proBadge: {
+    backgroundColor: '#a78bfa',
+    borderRadius: 6,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  proBadgeText: { color: '#fff', fontSize: 10, fontWeight: '800', letterSpacing: 1 },
+  manualBtn: {
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  manualBtnText: { color: '#888', fontSize: 14, fontWeight: '600' },
   sectionTitle: {
     color: '#888',
     fontSize: 12,

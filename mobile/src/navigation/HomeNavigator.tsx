@@ -4,12 +4,16 @@ import HomeScreen from '../screens/HomeScreen';
 import ProgramDetailScreen from '../screens/ProgramDetailScreen';
 import WorkoutScreen from '../screens/WorkoutScreen';
 import WorkoutAdaptScreen from '../screens/WorkoutAdaptScreen';
+import CreateProgramScreen from '../screens/CreateProgramScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 
 export type HomeStackParamList = {
   Home: undefined;
   ProgramDetail: { programId: string; programName: string };
   Workout: undefined;
   WorkoutAdapt: { logId: string };
+  CreateProgram: undefined;
+  Paywall: undefined;
 };
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
@@ -39,6 +43,16 @@ export default function HomeNavigator() {
         name="WorkoutAdapt"
         component={WorkoutAdaptScreen}
         options={{ title: 'Suggestions IA', headerBackVisible: false }}
+      />
+      <Stack.Screen
+        name="CreateProgram"
+        component={CreateProgramScreen}
+        options={{ title: 'Nouveau programme' }}
+      />
+      <Stack.Screen
+        name="Paywall"
+        component={PaywallScreen}
+        options={{ title: 'GymCoach Pro', presentation: 'modal' }}
       />
     </Stack.Navigator>
   );

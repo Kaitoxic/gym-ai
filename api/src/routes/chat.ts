@@ -149,6 +149,27 @@ router.post('/ask', requireAuth, async (req: Request, res: Response) => {
     if (!question?.trim()) return res.status(400).json({ error: 'question is required' });
     if (!conversation_id) return res.status(400).json({ error: 'conversation_id is required' });
 
+    // ── Free tier: max 3 messages/day, no persistent history ──────────────────
+    const isPro = req.user!.subscription_status === 'pro';
+    if (!isPro) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { count } = await supabase
+        .from('chat_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', req.user!.id)
+        .eq('role', 'user')
+        .gte('created_at', todayStart.toISOString());
+
+      if ((count ?? 0) >= 3) {
+        return res.status(429).json({
+          error: 'daily_limit_reached',
+          message: 'Limite de 3 messages/jour atteinte. Passez à Pro pour un accès illimité.',
+          limit: 3,
+        });
+      }
+    }
+
     // Verify ownership
     const { data: conv } = await supabase
       .from('conversations')
