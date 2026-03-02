@@ -235,12 +235,12 @@ FULL BODY DAY template (6 exercises):
   "focus": "chest, shoulders, triceps",
   "exercises": [
     { "slug": "barbell-bench-press", "name": "Barbell Bench Press", "sets": ${scheme.setsCompound}, "reps": "${scheme.repsCompound}", "rest_seconds": ${scheme.restCompound}, "notes": "Compound. ${scheme.rirCompound}. Arch back slightly, drive feet into floor. Add weight next session when you hit ${scheme.repsCompound.split('-')[1]} reps." },
-    { "slug": "overhead-press", "name": "Overhead Press", "sets": ${scheme.setsCompound}, "reps": "${scheme.repsCompound}", "rest_seconds": ${scheme.restCompound}, "notes": "Compound. ${scheme.rirCompound}. Full lockout at top, brace core." },
+    { "slug": "barbell-overhead-press", "name": "Barbell Overhead Press", "sets": ${scheme.setsCompound}, "reps": "${scheme.repsCompound}", "rest_seconds": ${scheme.restCompound}, "notes": "Compound. ${scheme.rirCompound}. Full lockout at top, brace core." },
     { "slug": "incline-dumbbell-press", "name": "Incline Dumbbell Press", "sets": ${scheme.setsCompound}, "reps": "${scheme.repsCompound}", "rest_seconds": ${scheme.restCompound}, "notes": "Compound. ${scheme.rirCompound}. 30-45 degree incline." },
-    { "slug": "lateral-raise", "name": "Lateral Raise", "sets": ${scheme.setsIsolation}, "reps": "${scheme.repsIsolation}", "rest_seconds": ${scheme.restIsolation}, "notes": "Isolation. ${scheme.rirIsolation}. Slight forward lean, lead with elbows." },
-    { "slug": "face-pull", "name": "Face Pull", "sets": ${scheme.setsIsolation}, "reps": "${scheme.repsIsolation}", "rest_seconds": ${scheme.restIsolation}, "notes": "Isolation. ${scheme.rirIsolation}. External rotation at end, great for shoulder health." },
-    { "slug": "tricep-pushdown", "name": "Tricep Pushdown", "sets": ${scheme.setsIsolation}, "reps": "${scheme.repsIsolation}", "rest_seconds": ${scheme.restIsolation}, "notes": "Isolation. ${scheme.rirIsolation}. Keep elbows fixed at sides." },
-    { "slug": "cable-fly", "name": "Cable Fly", "sets": ${scheme.setsIsolation}, "reps": "${scheme.repsIsolation}", "rest_seconds": ${scheme.restIsolation}, "notes": "Isolation. ${scheme.rirIsolation}. Squeeze at peak contraction, slight elbow bend." }
+    { "slug": "dumbbell-lateral-raise", "name": "Dumbbell Lateral Raise", "sets": ${scheme.setsIsolation}, "reps": "${scheme.repsIsolation}", "rest_seconds": ${scheme.restIsolation}, "notes": "Isolation. ${scheme.rirIsolation}. Slight forward lean, lead with elbows." },
+    { "slug": "cable-face-pull", "name": "Cable Face Pull", "sets": ${scheme.setsIsolation}, "reps": "${scheme.repsIsolation}", "rest_seconds": ${scheme.restIsolation}, "notes": "Isolation. ${scheme.rirIsolation}. External rotation at end, great for shoulder health." },
+    { "slug": "cable-tricep-pushdown", "name": "Cable Tricep Pushdown", "sets": ${scheme.setsIsolation}, "reps": "${scheme.repsIsolation}", "rest_seconds": ${scheme.restIsolation}, "notes": "Isolation. ${scheme.rirIsolation}. Keep elbows fixed at sides." },
+    { "slug": "pec-deck-fly", "name": "Pec Deck Fly", "sets": ${scheme.setsIsolation}, "reps": "${scheme.repsIsolation}", "rest_seconds": ${scheme.restIsolation}, "notes": "Isolation. ${scheme.rirIsolation}. Squeeze at peak contraction, slight elbow bend." }
   ]
 }`;
 
