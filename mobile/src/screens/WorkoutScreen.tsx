@@ -10,6 +10,7 @@ import {
   Modal,
   Image,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -66,7 +67,10 @@ function ExerciseDemoModal({
 
   const currentUrl = media?.type === 'gif' ? media.url
     : media?.type === 'slideshow' ? media.frames[frame]
+    : media?.type === 'video' ? media.thumbnail
     : null;
+
+  const isVideo = media?.type === 'video';
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -84,13 +88,21 @@ function ExerciseDemoModal({
               <Image
                 source={{ uri: currentUrl }}
                 style={[modalStyles.image, loading && { opacity: 0 }]}
-                resizeMode="contain"
+                resizeMode={isVideo ? 'cover' : 'contain'}
                 onLoad={() => setLoading(false)}
                 onError={() => { setLoading(false); setError(true); }}
               />
             )}
             {!currentUrl && !loading && (
               <View style={modalStyles.placeholder}><Text style={modalStyles.errorText}>Image non disponible</Text></View>
+            )}
+            {isVideo && !loading && !error && media?.type === 'video' && (
+              <TouchableOpacity
+                style={modalStyles.ytBtn}
+                onPress={() => Linking.openURL(`https://www.youtube.com/watch?v=${media.videoId}`)}
+              >
+                <Text style={modalStyles.ytBtnText}>▶ Voir sur YouTube</Text>
+              </TouchableOpacity>
             )}
           </View>
           {media?.type === 'slideshow' && media.frames.length > 1 && (
@@ -302,4 +314,14 @@ const modalStyles = StyleSheet.create({
   dots: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 8, marginBottom: 4 },
   dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#444' },
   dotActive: { backgroundColor: '#6366f1' },
+  ytBtn: {
+    position: 'absolute',
+    bottom: 10,
+    alignSelf: 'center',
+    backgroundColor: '#ff0000dd',
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+  },
+  ytBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
 });

@@ -1,11 +1,12 @@
 /**
  * exerciseImages.ts
- * Two-tier image system:
- *   1. EXERCISE_GIF_MAP  — animated GIFs from ExerciseDB CDN (primary, best quality)
- *   2. EXERCISE_WGER_MAP — static frames from wger.de (fallback for exercises without a GIF)
+ * Three-tier media system:
+ *   1. EXERCISE_GIF_MAP     — animated GIFs from ExerciseDB CDN (primary, best quality)
+ *   2. EXERCISE_YOUTUBE_MAP — YouTube tutorial videos for exercises with no ExerciseDB GIF
+ *   3. EXERCISE_WGER_MAP    — static frames from wger.de (last-resort fallback)
  *
  * Usage:
- *   getExerciseMedia(slug) → { type: 'gif', url } | { type: 'slideshow', frames } | null
+ *   getExerciseMedia(slug) → { type: 'gif', url } | { type: 'video', videoId, thumbnail } | { type: 'slideshow', frames } | null
  */
 
 const CDN = 'https://static.exercisedb.dev/media/';
@@ -31,7 +32,7 @@ export const EXERCISE_GIF_MAP: Record<string, string> = {
   'incline-barbell-bench-press':      CDN + '3TZduzM.gif',
   'decline-barbell-bench-press':      CDN + 'GrO65fd.gif',
   'pendlay-row':                      CDN + 'r0z6xzQ.gif',
-  'push-press':                       CDN + 'f7Y9eDZ.gif',
+  'push-press':                       CDN + 'FS63wTN.gif',
   'clean-and-press':                  CDN + 'SGY8Zui.gif',
   'box-squat':                        CDN + 'W9pFVv1.gif',
   'hack-squat':                       CDN + 'Qa55kX1.gif',
@@ -63,7 +64,7 @@ export const EXERCISE_GIF_MAP: Record<string, string> = {
   'tricep-kickback':                  CDN + 'W6PxUkg.gif',
   'overhead-tricep-extension':        CDN + 'mpKZGWz.gif',
   'skull-crusher':                    CDN + 'iZop9xO.gif',
-  'thruster-dumbbell':                CDN + 'W6PxUkg.gif',
+  'thruster-dumbbell':                CDN + 'yWxMvB5.gif',
   'devil-press':                      CDN + '0JtKWum.gif',
   'single-leg-deadlift':              CDN + 'gKozT8X.gif',
   'single-leg-calf-raise':            CDN + '1kB3Wmk.gif',
@@ -100,7 +101,7 @@ export const EXERCISE_GIF_MAP: Record<string, string> = {
   'lying-leg-curl':                   CDN + '17lJ1kr.gif',
   'seated-leg-curl':                  CDN + 'Zg3XY7P.gif',
   'machine-chest-press':              CDN + 'wDN97Ca.gif',
-  'machine-row':                      CDN + 'aaXr7ld.gif',
+  'machine-row':                      CDN + 'w2oRpuH.gif',
   'machine-shoulder-press':           CDN + '67n3r98.gif',
   'pec-deck':                         CDN + 'v3xmPAR.gif',
   'seated-calf-raise':                CDN + 'ipvgBnC.gif',
@@ -121,7 +122,7 @@ export const EXERCISE_GIF_MAP: Record<string, string> = {
   'plank':                            CDN + 'VBAWRPG.gif',
   'side-plank':                       CDN + 'wpbD28t.gif',
   'dead-bug':                         CDN + 'iny3m5y.gif',
-  'hollow-body-hold':                 CDN + 'H6ETwO9.gif',
+  // hollow-body-hold -> YouTube
   'dragon-flag':                      CDN + 'pQ0Mx1Z.gif',
   'hanging-leg-raise':                CDN + 'I3tsCnC.gif',
   'crunch':                           CDN + 'BMMolZ3.gif',
@@ -133,14 +134,14 @@ export const EXERCISE_GIF_MAP: Record<string, string> = {
   'hyperextension':                   CDN + 'zhMwOwE.gif',
   'glute-bridge':                     CDN + 'qKBpF7I.gif',
   'single-leg-glute-bridge':          CDN + 'C5jncD2.gif',
-  'donkey-kick':                      CDN + 'HEJ6DIX.gif',
+  'donkey-kick':                      CDN + 'wSScovH.gif',
   'mountain-climber':                 CDN + 'RJgzwny.gif',
   'burpee':                           CDN + 'dK9394r.gif',
   'jump-squat':                       CDN + 'LIlE5Tn.gif',
   'jump-lunge':                       CDN + 'PM1PZjg.gif',
   'box-jump':                         CDN + 'uZKq7lo.gif',
-  'broad-jump':                       CDN + 'uZKq7lo.gif',
-  'tuck-jump':                        CDN + 'uZKq7lo.gif',
+  // broad-jump -> YouTube
+  // tuck-jump  -> YouTube
   'jumping-jack':                     CDN + 'mr7pkqP.gif',
   'high-knee-run':                    CDN + 'oLrKqDH.gif',
   'bear-crawl':                       CDN + '0Yz8WdV.gif',
@@ -148,12 +149,12 @@ export const EXERCISE_GIF_MAP: Record<string, string> = {
   'wall-sit':                         CDN + 'sVQCCeG.gif',
   'pistol-squat':                     CDN + '5bpPTHv.gif',
   'sissy-squat':                      CDN + 'xdYPUtE.gif',
-  'nordic-curl':                      CDN + 'GOJKFfO.gif',
-  'glute-ham-raise':                  CDN + 'GOJKFfO.gif',
+  // nordic-curl -> YouTube
+  'glute-ham-raise':                  CDN + 'Vvwjz6N.gif',
   'step-up':                          CDN + '5MRH8H2.gif',
-  'cossack-squat':                    CDN + 'IMRsOCn.gif',
+  'cossack-squat':                    CDN + 'GWoKnIm.gif',
   'curtsy-lunge':                     CDN + 't8iSghb.gif',
-  'lateral-squat':                    CDN + 'IMRsOCn.gif',
+  // lateral-squat -> YouTube
   'jump-rope':                        CDN + 'e1e76I2.gif',
   'ab-wheel-rollout':                 CDN + 'isofgzg.gif',
   'frog-pump':                        CDN + 'rQhGcin.gif',
@@ -183,21 +184,40 @@ export const EXERCISE_GIF_MAP: Record<string, string> = {
   'resistance-band-bicep-curl':       CDN + 'vUTfFHw.gif',
   'resistance-band-deadlift':         CDN + 'KUaoUV8.gif',
   'resistance-band-glute-bridge':     CDN + 'Y1MsI1l.gif',
-  'resistance-band-glute-kickback':   CDN + 'Y1MsI1l.gif',
+  // resistance-band-glute-kickback -> YouTube
   'resistance-band-lateral-raise':    CDN + 'sTg7iys.gif',
   'resistance-band-chest-press':      CDN + '4x5Okof.gif',
-  'resistance-band-pull-apart':       CDN + 'Y1MsI1l.gif',
-  'resistance-band-monster-walk':     CDN + 'Y1MsI1l.gif',
-  'resistance-band-tricep-extension': CDN + 'Y1MsI1l.gif',
+  // resistance-band-pull-apart -> YouTube
+  'resistance-band-monster-walk':     CDN + 'O95afRA.gif',
+  'resistance-band-tricep-extension': CDN + 'obe5LMq.gif',
 
   // ── Specialty ──────────────────────────────────────────────────────────────
   'thruster':                         CDN + 'f7Y9eDZ.gif',
-  'battle-rope-wave':                 CDN + 'dK9394r.gif',
+  // battle-rope-wave -> YouTube
   'sled-push':                        CDN + 'tj41Nu6.gif',
-  'pallof-press':                     CDN + 'zd4P4B2.gif',
-  'landmine-press':                   CDN + 'zd4P4B2.gif',
+  'pallof-press':                     CDN + '9pa4H5m.gif',
+  // landmine-press -> YouTube
   'landmine-rotation':                CDN + 'QYysSLV.gif',
-  'lateral-band-walk':                CDN + 'obe5LMq.gif',
+  // lateral-band-walk -> YouTube
+};
+
+const YT_THUMB = (id: string) => `https://img.youtube.com/vi/${id}/hqdefault.jpg`;
+
+/**
+ * YouTube tutorial videos for exercises with no ExerciseDB GIF equivalent.
+ * slug -> YouTube videoId
+ */
+export const EXERCISE_YOUTUBE_MAP: Record<string, string> = {
+  'nordic-curl':                      '6NCN6kOagfY',
+  'battle-rope-wave':                 'KgS0f_moiHg',
+  'hollow-body-hold':                 'uZqTUwq96iU',
+  'resistance-band-pull-apart':       'eZwnwWMkEL4',
+  'resistance-band-glute-kickback':   'O5-ROTyo2dA',
+  'landmine-press':                   't9GuiNQo1O4',
+  'lateral-squat':                    '0lLIWWSmMm4',
+  'tuck-jump':                        'ZR6aFqdRi2Y',
+  'broad-jump':                       '7Du1KbwCdUk',
+  'lateral-band-walk':                '42cYOwpwOIc',
 };
 
 /** Fallback: slug -> array of static frame URLs (wger.de illustrated images) */
@@ -254,17 +274,22 @@ export const EXERCISE_WGER_MAP: Record<string, string[]> = {
 
 export type ExerciseMedia =
   | { type: 'gif'; url: string }
+  | { type: 'video'; videoId: string; thumbnail: string }
   | { type: 'slideshow'; frames: string[] };
 
 /**
  * Returns the best available media for an exercise:
- * - 'gif' if we have an animated GIF (primary)
- * - 'slideshow' if we only have static wger frames (fallback)
+ * - 'gif'       if we have an animated GIF (primary)
+ * - 'video'     if we have a YouTube tutorial (no ExerciseDB GIF)
+ * - 'slideshow' if we only have static wger frames (last-resort fallback)
  * - null if nothing available
  */
 export function getExerciseMedia(slug: string): ExerciseMedia | null {
   const gif = EXERCISE_GIF_MAP[slug];
   if (gif) return { type: 'gif', url: gif };
+
+  const videoId = EXERCISE_YOUTUBE_MAP[slug];
+  if (videoId) return { type: 'video', videoId, thumbnail: YT_THUMB(videoId) };
 
   const frames = EXERCISE_WGER_MAP[slug];
   if (frames && frames.length > 0) return { type: 'slideshow', frames };
@@ -295,9 +320,9 @@ export function getExerciseImageUrl(slug: string, frame: number = 0): string | n
   return null;
 }
 
-/** Returns true if we have any media (GIF or wger) for this exercise slug. */
+/** Returns true if we have any media (GIF, YouTube, or wger) for this exercise slug. */
 export function hasExerciseImages(slug: string): boolean {
-  return slug in EXERCISE_GIF_MAP || slug in EXERCISE_WGER_MAP;
+  return slug in EXERCISE_GIF_MAP || slug in EXERCISE_YOUTUBE_MAP || slug in EXERCISE_WGER_MAP;
 }
 
 /** Returns total frame count (1 for GIF, N for slideshow, 0 if none). */

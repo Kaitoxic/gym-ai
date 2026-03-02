@@ -7,6 +7,8 @@ import {
   Image,
   ActivityIndicator,
   SafeAreaView,
+  TouchableOpacity,
+  Linking,
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ExercisesStackParamList } from '../../navigation/ExercisesNavigator';
@@ -32,7 +34,7 @@ function Tag({ label, color }: { label: string; color: string }) {
   );
 }
 
-/** Unified media component: shows animated GIF or multi-frame slideshow */
+/** Unified media component: shows animated GIF, YouTube thumbnail, or multi-frame slideshow */
 function ExerciseMedia({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -56,6 +58,39 @@ function ExerciseMedia({ slug }: { slug: string }) {
   }, [slug]);
 
   if (!media) return null;
+
+  // YouTube video
+  if (media.type === 'video') {
+    return (
+      <View style={styles.imageContainer}>
+        {loading && !error && (
+          <View style={styles.imagePlaceholder}>
+            <ActivityIndicator size="large" color="#6366f1" />
+          </View>
+        )}
+        {!error && (
+          <Image
+            source={{ uri: media.thumbnail }}
+            style={[styles.exerciseImage, loading && styles.hidden]}
+            resizeMode="cover"
+            onLoad={() => setLoading(false)}
+            onError={() => { setLoading(false); setError(true); }}
+          />
+        )}
+        {error && (
+          <View style={styles.imagePlaceholder}>
+            <Text style={styles.imageErrorText}>Apercu non disponible</Text>
+          </View>
+        )}
+        <TouchableOpacity
+          style={styles.ytBtn}
+          onPress={() => Linking.openURL(`https://www.youtube.com/watch?v=${media.videoId}`)}
+        >
+          <Text style={styles.ytBtnText}>▶ Voir sur YouTube</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   const currentUrl = media.type === 'gif' ? media.url : media.frames[frame];
   const frameCount = media.type === 'slideshow' ? media.frames.length : 0;
@@ -173,6 +208,16 @@ const styles = StyleSheet.create({
   frameIndicator: { flexDirection: 'row', gap: 4, paddingVertical: 6, flexWrap: 'wrap', justifyContent: 'center' },
   frameDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#333' },
   frameDotActive: { backgroundColor: '#6366f1' },
+  ytBtn: {
+    position: 'absolute',
+    bottom: 10,
+    alignSelf: 'center',
+    backgroundColor: '#ff0000dd',
+    borderRadius: 8,
+    paddingHorizontal: 18,
+    paddingVertical: 7,
+  },
+  ytBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   section: { marginTop: 24 },
   sectionTitle: {
     color: '#888',
