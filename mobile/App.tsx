@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
 import { useAuthStore } from './src/store/authStore';
@@ -10,7 +10,7 @@ import MainTabs from './src/navigation/MainTabs';
 
 export default function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
-  const { profile, initialized: profileInitialized, fetchProfile } = useProfileStore();
+  const { profile, initialized: profileInitialized, fetchProfile, error: profileError } = useProfileStore();
 
   // Initialize auth on launch
   useEffect(() => {
@@ -40,6 +40,21 @@ export default function App() {
     );
   }
 
+  // Network error: profile fetch failed but user is authenticated.
+  // Don't redirect to onboarding — show a retry screen instead.
+  if (user && profileInitialized && profileError && !profile) {
+    return (
+      <View style={styles.loader}>
+        <StatusBar style="light" />
+        <Text style={styles.errorTitle}>Erreur de connexion</Text>
+        <Text style={styles.errorMsg}>Impossible de charger votre profil.{'\n'}Verifie ta connexion internet.</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={fetchProfile}>
+          <Text style={styles.retryText}>Reessayer</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
   return (
     <NavigationContainer>
       <StatusBar style="light" />
@@ -63,5 +78,31 @@ const styles = StyleSheet.create({
     backgroundColor: '#0f0f0f',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 32,
+  },
+  errorTitle: {
+    color: '#ef4444',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  errorMsg: {
+    color: '#888',
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  retryBtn: {
+    backgroundColor: '#6366f1',
+    borderRadius: 10,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+  },
+  retryText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
