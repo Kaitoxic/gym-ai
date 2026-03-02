@@ -37,6 +37,12 @@ interface ProgramState {
   fetchProgramById: (id: string) => Promise<Program | null>;
   generateProgram: () => Promise<Program | null>;
   deleteProgram: (id: string) => Promise<void>;
+  updateProgramExercise: (
+    programId: string,
+    dayIndex: number,
+    exerciseIndex: number,
+    newExercise: ProgramExercise
+  ) => Promise<Program | null>;
 }
 
 export const useProgramStore = create<ProgramState>((set, get) => ({
@@ -86,6 +92,39 @@ export const useProgramStore = create<ProgramState>((set, get) => ({
       set((state) => ({ programs: state.programs.filter((p) => p.id !== id) }));
     } catch (err: any) {
       set({ error: err.message ?? 'Delete failed' });
+    }
+  },
+
+  updateProgramExercise: async (programId, dayIndex, exerciseIndex, newExercise) => {
+    try {
+      // Fetch current program to get full schedule
+      const res = await apiClient.get<{ data: Program }>(`/programs/${programId}`);
+      const program = res.data.data;
+
+      // Deep-clone schedule and replace the target exercise
+      const newSchedule: ProgramDay[] = program.schedule.map((day, di) => {
+        if (di !== dayIndex) return day;
+        return {
+          ...day,
+          exercises: day.exercises.map((ex, ei) =>
+            ei === exerciseIndex ? { ...ex, ...newExercise } : ex
+          ),
+        };
+      });
+
+      // Persist via PATCH
+      const patchRes = await apiClient.patch<{ data: Program }>(`/programs/${programId}`, { schedule: newSchedule });
+      const updated = patchRes.data.data;
+
+      // Update local cache if program is in the list
+      set((state) => ({
+        programs: state.programs.map((p) => p.id === programId ? updated : p),
+      }));
+
+      return updated;
+    } catch (err: any) {
+      set({ error: err.message ?? 'Update failed' });
+      return null;
     }
   },
 }));

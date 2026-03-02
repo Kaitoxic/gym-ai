@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { ExercisesStackParamList } from '../../navigation/ExercisesNavigator';
-import { getExerciseGifUrl, hasExerciseImages } from '../../lib/exerciseImages';
+import { getExerciseMedia, hasExerciseImages } from '../../lib/exerciseImages';
 
 type Props = NativeStackScreenProps<ExercisesStackParamList, 'ExerciseDetail'>;
 
@@ -32,12 +32,33 @@ function Tag({ label, color }: { label: string; color: string }) {
   );
 }
 
-function ExerciseGif({ slug }: { slug: string }) {
+/** Unified media component: shows animated GIF or multi-frame slideshow */
+function ExerciseMedia({ slug }: { slug: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [frame, setFrame] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const gifUrl = getExerciseGifUrl(slug);
-  if (!gifUrl) return null;
+  const media = getExerciseMedia(slug);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    setFrame(0);
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    if (media?.type === 'slideshow' && media.frames.length > 1) {
+      intervalRef.current = setInterval(() => {
+        setFrame((f) => (f + 1) % media.frames.length);
+      }, 1200);
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
+  }, [slug]);
+
+  if (!media) return null;
+
+  const currentUrl = media.type === 'gif' ? media.url : media.frames[frame];
+  const frameCount = media.type === 'slideshow' ? media.frames.length : 0;
 
   return (
     <View style={styles.imageContainer}>
@@ -51,14 +72,21 @@ function ExerciseGif({ slug }: { slug: string }) {
           <Text style={styles.imageErrorText}>Image non disponible</Text>
         </View>
       )}
-      {!error && (
+      {!error && currentUrl && (
         <Image
-          source={{ uri: gifUrl }}
+          source={{ uri: currentUrl }}
           style={[styles.exerciseImage, loading && styles.hidden]}
           resizeMode="contain"
           onLoad={() => setLoading(false)}
           onError={() => { setLoading(false); setError(true); }}
         />
+      )}
+      {!loading && !error && frameCount > 1 && (
+        <View style={styles.frameIndicator}>
+          {media.type === 'slideshow' && media.frames.map((_, i) => (
+            <View key={i} style={[styles.frameDot, i === frame && styles.frameDotActive]} />
+          ))}
+        </View>
       )}
     </View>
   );
@@ -79,7 +107,7 @@ export default function ExerciseDetailScreen({ route }: Props) {
           <Tag label={capitalize(exercise.difficulty)} color={diffColor} />
         </View>
 
-        {showImages && <ExerciseGif slug={exercise.slug} />}
+        {showImages && <ExerciseMedia slug={exercise.slug} />}
 
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Muscle Groups</Text>
@@ -133,10 +161,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 220,
   },
-  exerciseImage: {
-    width: '100%',
-    height: 220,
-  },
+  exerciseImage: { width: '100%', height: 220 },
   hidden: { opacity: 0 },
   imagePlaceholder: {
     height: 220,
@@ -145,6 +170,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   imageErrorText: { color: '#555', fontSize: 13 },
+  frameIndicator: { flexDirection: 'row', gap: 4, paddingVertical: 6, flexWrap: 'wrap', justifyContent: 'center' },
+  frameDot: { width: 5, height: 5, borderRadius: 3, backgroundColor: '#333' },
+  frameDotActive: { backgroundColor: '#6366f1' },
   section: { marginTop: 24 },
   sectionTitle: {
     color: '#888',

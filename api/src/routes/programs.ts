@@ -367,6 +367,29 @@ Return ONLY the JSON object with this structure:
   }
 });
 
+// ─── PATCH /programs/:id ─────────────────────────────────────────
+router.patch('/:id', requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { schedule } = req.body;
+    if (!Array.isArray(schedule)) {
+      return res.status(400).json({ error: 'schedule must be an array' });
+    }
+
+    const { data, error } = await supabase
+      .from('programs')
+      .update({ schedule })
+      .eq('id', req.params.id)
+      .eq('user_id', req.user!.id)
+      .select()
+      .single();
+
+    if (error || !data) return res.status(404).json({ error: 'Program not found or update failed', detail: error?.message });
+    return res.json({ data });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Unexpected error', detail: err.message });
+  }
+});
+
 // ─── DELETE /programs/:id ────────────────────────────────────────
 router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
   try {

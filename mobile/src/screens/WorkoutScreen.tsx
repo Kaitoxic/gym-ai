@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import type { HomeStackParamList } from '../navigation/HomeNavigator';
 import { useWorkoutStore, type ActiveSet } from '../store/workoutStore';
-import { getExerciseGifUrl, hasExerciseImages } from '../lib/exerciseImages';
+import { getExerciseMedia, hasExerciseImages } from '../lib/exerciseImages';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'Workout'>;
 
@@ -44,12 +44,29 @@ function ExerciseDemoModal({
 }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [frame, setFrame] = useState(0);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const gifUrl = getExerciseGifUrl(slug);
+  const media = getExerciseMedia(slug);
 
   useEffect(() => {
-    if (visible) { setLoading(true); setError(false); }
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (visible) {
+      setLoading(true);
+      setError(false);
+      setFrame(0);
+      if (media?.type === 'slideshow' && media.frames.length > 1) {
+        intervalRef.current = setInterval(() => {
+          setFrame((f) => (f + 1) % media.frames.length);
+        }, 1200);
+      }
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, [visible, slug]);
+
+  const currentUrl = media?.type === 'gif' ? media.url
+    : media?.type === 'slideshow' ? media.frames[frame]
+    : null;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -63,19 +80,26 @@ function ExerciseDemoModal({
             {error && (
               <View style={modalStyles.placeholder}><Text style={modalStyles.errorText}>Image non disponible</Text></View>
             )}
-            {gifUrl && !error && (
+            {currentUrl && !error && (
               <Image
-                source={{ uri: gifUrl }}
+                source={{ uri: currentUrl }}
                 style={[modalStyles.image, loading && { opacity: 0 }]}
                 resizeMode="contain"
                 onLoad={() => setLoading(false)}
                 onError={() => { setLoading(false); setError(true); }}
               />
             )}
-            {!gifUrl && (
+            {!currentUrl && !loading && (
               <View style={modalStyles.placeholder}><Text style={modalStyles.errorText}>Image non disponible</Text></View>
             )}
           </View>
+          {media?.type === 'slideshow' && media.frames.length > 1 && (
+            <View style={modalStyles.dots}>
+              {media.frames.map((_, i) => (
+                <View key={i} style={[modalStyles.dot, i === frame && modalStyles.dotActive]} />
+              ))}
+            </View>
+          )}
           <TouchableOpacity style={modalStyles.closeBtn} onPress={onClose}>
             <Text style={modalStyles.closeBtnText}>Fermer</Text>
           </TouchableOpacity>
@@ -275,4 +299,7 @@ const modalStyles = StyleSheet.create({
   errorText: { color: '#555', fontSize: 13 },
   closeBtn: { backgroundColor: '#6366f1', borderRadius: 10, paddingHorizontal: 32, paddingVertical: 10, marginTop: 4 },
   closeBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  dots: { flexDirection: 'row', gap: 6, justifyContent: 'center', marginTop: 8, marginBottom: 4 },
+  dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#444' },
+  dotActive: { backgroundColor: '#6366f1' },
 });
