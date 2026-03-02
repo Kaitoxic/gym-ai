@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer } from '@react-navigation/native';
@@ -12,23 +12,42 @@ export default function App() {
   const { user, loading: authLoading, initialize } = useAuthStore();
   const { profile, initialized: profileInitialized, fetchProfile, error: profileError } = useProfileStore();
 
+  // Track if user explicitly chose to bypass profile error
+  const [bypassError, setBypassError] = useState(false);
+  // Auto-retry counter
+  const retryCount = useRef(0);
+  const retryTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   // Initialize auth on launch
   useEffect(() => {
     initialize();
   }, [initialize]);
 
-  // Fetch profile when user is authenticated
+  // Fetch profile when user is authenticated; auto-retry up to 2 times on error
   useEffect(() => {
     if (user) {
+      retryCount.current = 0;
+      setBypassError(false);
       fetchProfile();
     } else {
       useProfileStore.getState().reset();
     }
   }, [user]);
 
-  // Only block rendering until auth AND initial profile fetch are done
-  // updateProfile's loading state is intentionally excluded here —
-  // we must never unmount NavigationContainer mid-flow (would reset stack to Step 1)
+  // Auto-retry once after 2s if first fetch fails
+  useEffect(() => {
+    if (profileInitialized && profileError && !profile && retryCount.current < 2) {
+      retryCount.current += 1;
+      retryTimer.current = setTimeout(() => {
+        fetchProfile();
+      }, 2000);
+    }
+    return () => {
+      if (retryTimer.current) clearTimeout(retryTimer.current);
+    };
+  }, [profileInitialized, profileError, profile]);
+
+  // Block rendering until auth AND initial profile fetch are done
   const isLoading = authLoading || (!!user && !profileInitialized);
 
   if (isLoading) {
@@ -40,16 +59,21 @@ export default function App() {
     );
   }
 
-  // Network error: profile fetch failed but user is authenticated.
-  // Don't redirect to onboarding — show a retry screen instead.
-  if (user && profileInitialized && profileError && !profile) {
+  // Profile fetch failed after retries: show error + bypass option
+  // Don't redirect to onboarding just because the server was temporarily unavailable
+  if (user && profileInitialized && profileError && !profile && !bypassError) {
     return (
       <View style={styles.loader}>
         <StatusBar style="light" />
-        <Text style={styles.errorTitle}>Erreur de connexion</Text>
-        <Text style={styles.errorMsg}>Impossible de charger votre profil.{'\n'}Verifie ta connexion internet.</Text>
-        <TouchableOpacity style={styles.retryBtn} onPress={fetchProfile}>
+        <Text style={styles.errorTitle}>Profil indisponible</Text>
+        <Text style={styles.errorMsg}>
+          Impossible de charger ton profil.{'\n'}Le serveur est peut-etre temporairement indisponible.
+        </Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={() => { retryCount.current = 0; fetchProfile(); }}>
           <Text style={styles.retryText}>Reessayer</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.bypassBtn} onPress={() => setBypassError(true)}>
+          <Text style={styles.bypassText}>Continuer quand meme</Text>
         </TouchableOpacity>
       </View>
     );
@@ -61,7 +85,7 @@ export default function App() {
       {!user ? (
         // Not logged in → Auth screens
         <AuthNavigator />
-      ) : !profile?.onboarding_done ? (
+      ) : !profile?.onboarding_done && !bypassError ? (
         // Logged in but not onboarded → Onboarding flow
         <OnboardingNavigator />
       ) : (
@@ -92,17 +116,25 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
     lineHeight: 22,
-    marginBottom: 24,
+    marginBottom: 28,
   },
   retryBtn: {
     backgroundColor: '#6366f1',
     borderRadius: 10,
     paddingHorizontal: 28,
     paddingVertical: 12,
+    marginBottom: 14,
   },
   retryText: {
     color: '#fff',
     fontSize: 15,
     fontWeight: '700',
+  },
+  bypassBtn: {
+    paddingVertical: 8,
+  },
+  bypassText: {
+    color: '#555',
+    fontSize: 13,
   },
 });
