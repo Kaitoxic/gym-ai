@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth';
+import { checkQuota } from '../middleware/quota';
 import { supabase } from '../lib/supabase';
 import Groq from 'groq-sdk';
 import { NUTRITION_KNOWLEDGE } from '../lib/knowledge';
@@ -46,11 +47,14 @@ router.delete('/history', requireAuth, async (req: Request, res: Response) => {
 });
 
 // ─── POST /nutrition/ask ─────────────────────────────────────────────────────
-router.post('/ask', requireAuth, async (req: Request, res: Response) => {
+router.post('/ask', requireAuth, checkQuota, async (req: Request, res: Response) => {
   try {
     const { question, coaching_style, detail_level } = req.body;
     if (!question?.trim()) {
       return res.status(400).json({ error: 'question is required' });
+    }
+    if (question.trim().length > 2000) {
+      return res.status(400).json({ error: 'question too long (max 2000 chars)' });
     }
 
     // Build coaching style modifier

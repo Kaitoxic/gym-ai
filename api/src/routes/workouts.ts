@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { requireAuth } from '../middleware/auth';
+import { checkQuota } from '../middleware/quota';
 import { supabase } from '../lib/supabase';
 import Groq from 'groq-sdk';
 
@@ -115,11 +116,14 @@ router.get('/streak', requireAuth, async (req: Request, res: Response) => {
 
 // ─── POST /workouts/adapt ────────────────────────────────────────
 // AI suggestions for next session based on completed workout
-router.post('/adapt', requireAuth, async (req: Request, res: Response) => {
+router.post('/adapt', requireAuth, checkQuota, async (req: Request, res: Response) => {
   try {
     const { day_name, sets_done, coaching_style, detail_level } = req.body;
     if (!day_name || !Array.isArray(sets_done)) {
       return res.status(400).json({ error: 'day_name and sets_done are required' });
+    }
+    if (sets_done.length > 50) {
+      return res.status(400).json({ error: 'sets_done too large (max 50 sets)' });
     }
 
     // Build coaching style modifier

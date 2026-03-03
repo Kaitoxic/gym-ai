@@ -141,6 +141,20 @@ router.post('/', requireAuth, async (req: Request, res: Response) => {
     if (!Array.isArray(schedule) || schedule.length === 0) {
       return res.status(400).json({ error: 'schedule must be a non-empty array' });
     }
+    if (schedule.length > 7) {
+      return res.status(400).json({ error: 'schedule cannot exceed 7 days' });
+    }
+    for (const day of schedule) {
+      if (typeof day !== 'object' || day === null) {
+        return res.status(400).json({ error: 'each schedule entry must be an object' });
+      }
+      if (!Array.isArray(day.exercises)) {
+        return res.status(400).json({ error: 'each schedule day must have an exercises array' });
+      }
+      if (day.exercises.length > 30) {
+        return res.status(400).json({ error: 'a day cannot have more than 30 exercises' });
+      }
+    }
 
     const { data, error } = await supabase
       .from('programs')

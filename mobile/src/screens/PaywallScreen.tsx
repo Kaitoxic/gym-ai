@@ -21,8 +21,8 @@ const PRO_FEATURES = [
 
 export default function PaywallScreen() {
   const navigation = useNavigation();
-  const { openCheckout } = useSubscriptionStore();
-  const [loading, setLoading] = useState<'monthly' | 'yearly' | null>(null);
+  const { openCheckout, devSetPro } = useSubscriptionStore();
+  const [loading, setLoading] = useState<'monthly' | 'yearly' | 'dev' | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly');
 
   const handleSubscribe = async () => {
@@ -31,11 +31,7 @@ export default function PaywallScreen() {
     setLoading(null);
 
     if (error) {
-      if (error.includes('not configured')) {
-        Alert.alert('Indisponible', 'Le paiement n\'est pas encore configuré.');
-      } else {
-        Alert.alert('Erreur', error);
-      }
+      Alert.alert('Erreur paiement', error);
     } else {
       const { status } = useSubscriptionStore.getState();
       if (status === 'pro') {
@@ -43,6 +39,19 @@ export default function PaywallScreen() {
           { text: 'Super !', onPress: () => navigation.goBack() },
         ]);
       }
+    }
+  };
+
+  const handleDevPro = async () => {
+    setLoading('dev');
+    const { error } = await devSetPro();
+    setLoading(null);
+    if (error) {
+      Alert.alert('Erreur', error);
+    } else {
+      Alert.alert('[DEV] Pro activé', 'Statut Pro pendant 30 jours.', [
+        { text: 'OK', onPress: () => navigation.goBack() },
+      ]);
     }
   };
 
@@ -123,6 +132,20 @@ export default function PaywallScreen() {
         <Text style={styles.legal}>
           Paiement sécurisé par Stripe. Résiliable à tout moment depuis les paramètres.
         </Text>
+
+        {/* DEV ONLY */}
+        <TouchableOpacity
+          style={styles.devBtn}
+          onPress={handleDevPro}
+          disabled={!!loading}
+          activeOpacity={0.7}
+        >
+          {loading === 'dev' ? (
+            <ActivityIndicator color="#555" size="small" />
+          ) : (
+            <Text style={styles.devText}>[DEV] Activer Pro sans payer</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -210,5 +233,15 @@ const styles = StyleSheet.create({
   ctaBtnDisabled: { opacity: 0.6 },
   ctaText: { color: '#fff', fontSize: 16, fontWeight: '700' },
 
-  legal: { color: '#444', fontSize: 11, textAlign: 'center', lineHeight: 16 },
+  legal: { color: '#444', fontSize: 11, textAlign: 'center', lineHeight: 16, marginBottom: 20 },
+
+  devBtn: {
+    borderWidth: 1,
+    borderColor: '#2a2a2a',
+    borderRadius: 10,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  devText: { color: '#444', fontSize: 12 },
 });

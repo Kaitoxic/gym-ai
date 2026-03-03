@@ -46,6 +46,16 @@ router.post('/create-checkout', requireAuth, async (req: Request, res: Response)
     const { data: { user } } = await supabase.auth.admin.getUserById(req.user!.id);
     let customerId = user?.app_metadata?.stripe_customer_id as string | undefined;
 
+    if (customerId) {
+      // Verify customer still exists in current mode (test vs live — IDs differ)
+      try {
+        await stripe.customers.retrieve(customerId);
+      } catch {
+        console.log('[stripe] customer not found in current mode, will create new one');
+        customerId = undefined;
+      }
+    }
+
     if (!customerId) {
       const customer = await stripe.customers.create({
         email: req.user!.email,
@@ -70,6 +80,7 @@ router.post('/create-checkout', requireAuth, async (req: Request, res: Response)
 
     return res.json({ url: session.url });
   } catch (err: any) {
+    console.error('[stripe] checkout creation failed:', err.message);
     return res.status(500).json({ error: 'checkout creation failed', detail: err.message });
   }
 });
@@ -167,6 +178,49 @@ router.post('/webhook', async (req: Request, res: Response) => {
   }
 
   return res.json({ received: true });
+});
+
+// ─── POST /subscriptions/dev-set-pro ─────────────────────────────────────────
+// DEV ONLY — bypass Stripe, set user as pro directly
+router.post('/dev-set-pro', requireAuth, async (req: Request, res: Response) => {
+  const isDev = process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEV_ROUTES === 'true';
+  if (!isDev) {
+    return res.status(403).json({ error: 'Not available' });
+  }
+  try {
+    const periodEnd = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(); // +30 days
+    await supabase.auth.admin.updateUserById(req.user!.id, {
+      user_metadata: {
+        subscription_status: 'pro',
+        subscription_period_end: periodEnd,
+      },
+    });
+    console.log(`[dev] user ${req.user!.id} set to Pro (expires ${periodEnd})`);
+    return res.json({ status: 'pro', period_end: periodEnd });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+// ─── POST /subscriptions/dev-set-free ────────────────────────────────────────
+// DEV ONLY — reset user back to free
+router.post('/dev-set-free', requireAuth, async (req: Request, res: Response) => {
+  const isDev = process.env.NODE_ENV !== 'production' && process.env.ENABLE_DEV_ROUTES === 'true';
+  if (!isDev) {
+    return res.status(403).json({ error: 'Not available' });
+  }
+  try {
+    await supabase.auth.admin.updateUserById(req.user!.id, {
+      user_metadata: {
+        subscription_status: 'free',
+        subscription_period_end: null,
+      },
+    });
+    console.log(`[dev] user ${req.user!.id} reset to Free`);
+    return res.json({ status: 'free' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 export default router;
